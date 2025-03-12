@@ -6,11 +6,12 @@ to provide common behaviors like energy management and movement.
 
 from dataclasses import dataclass
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Dict, Any
+from uuid import uuid4
 
 if TYPE_CHECKING:
-    from .entity import Entity
-    from .environment import Environment
+    from virtuallife.simulation.entity import Entity
+    from virtuallife.simulation.environment import Environment
 
 
 @dataclass
@@ -165,4 +166,110 @@ class ResourceConsumerComponent:
         if new_amount > 0:
             environment.add_resource(self.resource_type, entity.position, new_amount)
         else:
-            environment.remove_resource(self.resource_type, entity.position) 
+            environment.remove_resource(self.resource_type, entity.position)
+
+
+class ReproductionComponent:
+    """Component that handles entity reproduction."""
+
+    def __init__(
+        self,
+        reproduction_threshold: float = 80.0,
+        reproduction_cost: float = 50.0,
+        reproduction_chance: float = 0.1,
+        offspring_energy: float = 50.0,
+        mutation_rate: float = 0.1,
+        inherit_components: Optional[Dict[str, bool]] = None,
+    ) -> None:
+        """Initialize the reproduction component.
+
+        Args:
+            reproduction_threshold: Energy required to reproduce
+            reproduction_cost: Energy cost of reproduction
+            reproduction_chance: Chance to reproduce when conditions are met
+            offspring_energy: Initial energy for offspring
+            mutation_rate: Rate at which component values mutate
+            inherit_components: Dict of component types to inherit (True) or not (False)
+        """
+        self.reproduction_threshold = reproduction_threshold
+        self.reproduction_cost = reproduction_cost
+        self.reproduction_chance = reproduction_chance
+        self.offspring_energy = offspring_energy
+        self.mutation_rate = mutation_rate
+        self.inherit_components = inherit_components or {
+            "energy": True,
+            "movement": True,
+            "consumer": True,
+            "reproduction": True
+        }
+
+    def update(self, entity: "Entity", environment: "Environment") -> None:
+        """Update reproduction state and potentially create offspring.
+
+        Args:
+            entity: The entity this component belongs to
+            environment: The environment the entity exists in
+        """
+        # Check for energy component
+        energy_component = entity.get_component_typed("energy", EnergyComponent)
+        if energy_component is None or energy_component.energy < self.reproduction_threshold:
+            return
+
+        # Random chance to reproduce
+        if random.random() > self.reproduction_chance:
+            return
+
+        # Create offspring with inherited components
+        from virtuallife.simulation.entity import Entity  # Import here to avoid circular imports
+        offspring = Entity(position=entity.position)
+
+        # Transfer energy cost from parent to offspring
+        energy_component.energy -= self.reproduction_cost
+        
+        # Add components to offspring based on inheritance settings
+        for component_type, should_inherit in self.inherit_components.items():
+            if not should_inherit:
+                continue
+                
+            parent_component = entity.get_component(component_type)
+            if parent_component is not None:
+                # Create a new component with potentially mutated values
+                offspring_component = self._create_mutated_component(parent_component)
+                offspring.add_component(component_type, offspring_component)
+        
+        # Ensure offspring has energy component with initial energy
+        if "energy" in self.inherit_components and self.inherit_components["energy"]:
+            energy = offspring.get_component_typed("energy", EnergyComponent)
+            if energy is not None:
+                energy.energy = self.offspring_energy
+        
+        # Add offspring to environment
+        environment.add_entity(offspring)
+
+    def _create_mutated_component(self, component: Any) -> Any:
+        """Create a new component with potentially mutated values.
+        
+        Args:
+            component: The parent component to mutate
+        
+        Returns:
+            A new component instance with potentially mutated values
+        """
+        # Create a new instance of the same component type
+        new_component = component.__class__()
+        
+        # Copy and potentially mutate numeric attributes
+        for attr_name, value in vars(component).items():
+            if isinstance(value, (int, float)):
+                # Apply random mutation based on mutation rate
+                if random.random() < self.mutation_rate:
+                    mutation_factor = random.uniform(0.8, 1.2)  # ±20% mutation
+                    mutated_value = value * mutation_factor
+                    setattr(new_component, attr_name, mutated_value)
+                else:
+                    setattr(new_component, attr_name, value)
+            else:
+                # Copy non-numeric attributes as is
+                setattr(new_component, attr_name, value)
+        
+        return new_component 

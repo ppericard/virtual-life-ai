@@ -1,13 +1,13 @@
 """Unit tests for the standard components."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
-from unittest.mock import patch
 
 from virtuallife.simulation.components import (
     EnergyComponent,
     MovementComponent,
     ResourceConsumerComponent,
+    ReproductionComponent,
 )
 from virtuallife.simulation.entity import Entity
 from virtuallife.simulation.environment import Environment
@@ -293,4 +293,151 @@ def test_different_resource_types(environment, entity):
     # Check water was consumed
     assert environment.get_resource("water", entity.position) == 2.0
     # Check energy was gained
-    assert energy.energy == 51.0 
+    assert energy.energy == 51.0
+
+
+def test_reproduction_component_initialization():
+    """Test reproduction component initialization."""
+    component = ReproductionComponent()
+    assert component.reproduction_threshold == 80.0
+    assert component.reproduction_cost == 50.0
+    assert component.reproduction_chance == 0.1
+    assert component.offspring_energy == 50.0
+    assert component.mutation_rate == 0.1
+    assert component.inherit_components == {
+        "energy": True,
+        "movement": True,
+        "consumer": True,
+        "reproduction": True
+    }
+
+
+def test_reproduction_without_energy():
+    """Test that reproduction fails without energy component."""
+    component = ReproductionComponent()
+    entity = Entity()
+    env = MagicMock()
+    
+    component.update(entity, env)
+    env.add_entity.assert_not_called()
+
+
+def test_reproduction_insufficient_energy():
+    """Test that reproduction fails with insufficient energy."""
+    component = ReproductionComponent()
+    entity = Entity()
+    energy = EnergyComponent(energy=70.0)  # Below reproduction threshold
+    entity.add_component("energy", energy)
+    env = MagicMock()
+    
+    component.update(entity, env)
+    env.add_entity.assert_not_called()
+
+
+@patch('random.random', return_value=0.0)  # Always reproduce
+def test_successful_reproduction(_mock_random):
+    """Test successful reproduction with component inheritance."""
+    # Create parent entity with components
+    parent = Entity(position=(5, 5))
+    parent.add_component("energy", EnergyComponent(energy=100.0))
+    parent.add_component("movement", MovementComponent(speed=1.0))
+    parent.add_component("reproduction", ReproductionComponent())
+    
+    # Create environment
+    env = Environment(10, 10)
+    env.add_entity(parent)
+    
+    # Initial entity count
+    initial_count = len(env.entities)
+    
+    # Update reproduction
+    parent.get_component("reproduction").update(parent, env)
+    
+    # Verify offspring was created
+    assert len(env.entities) == initial_count + 1
+    
+    # Find offspring (the new entity)
+    offspring_id = next(eid for eid in env.entities.keys() if eid != parent.id)
+    offspring = env.entities[offspring_id]
+    
+    # Verify offspring has inherited components
+    assert offspring.has_component("energy")
+    assert offspring.has_component("movement")
+    assert offspring.has_component("reproduction")
+    
+    # Verify parent's energy was reduced
+    parent_energy = parent.get_component("energy")
+    assert parent_energy.energy == 50.0  # 100 - reproduction_cost
+
+
+@patch('random.random', return_value=1.0)  # Never reproduce
+def test_reproduction_chance(_mock_random):
+    """Test that reproduction chance prevents constant reproduction."""
+    component = ReproductionComponent()
+    entity = Entity()
+    entity.add_component("energy", EnergyComponent(energy=100.0))
+    env = MagicMock()
+    
+    component.update(entity, env)
+    env.add_entity.assert_not_called()
+
+
+def test_mutation_in_offspring():
+    """Test that offspring components have mutated values."""
+    # Create parent with specific values
+    parent = Entity()
+    parent.add_component("energy", EnergyComponent(energy=100.0, decay_rate=0.1))
+    parent.add_component("movement", MovementComponent(speed=1.0, movement_cost=0.1))
+    reproduction = ReproductionComponent(mutation_rate=0.5)  # High mutation rate for testing
+    parent.add_component("reproduction", reproduction)
+    
+    # Create environment
+    env = Environment(10, 10)
+    env.add_entity(parent)
+    
+    # Force reproduction
+    with patch('random.random', return_value=0.0):  # Always reproduce
+        reproduction.update(parent, env)
+    
+    # Find offspring
+    offspring_id = next(eid for eid in env.entities.keys() if eid != parent.id)
+    offspring = env.entities[offspring_id]
+    
+    # Get offspring components
+    offspring_energy = offspring.get_component_typed("energy", EnergyComponent)
+    offspring_movement = offspring.get_component_typed("movement", MovementComponent)
+    
+    # Verify values are different due to mutation
+    assert offspring_energy.decay_rate != 0.1
+    assert offspring_movement.speed != 1.0
+    assert offspring_movement.movement_cost != 0.1
+
+
+def test_custom_inheritance_settings():
+    """Test that custom inheritance settings are respected."""
+    # Create parent with all components
+    parent = Entity()
+    parent.add_component("energy", EnergyComponent())
+    parent.add_component("movement", MovementComponent())
+    
+    # Create reproduction component that only inherits energy
+    reproduction = ReproductionComponent(
+        inherit_components={"energy": True, "movement": False}
+    )
+    parent.add_component("reproduction", reproduction)
+    
+    # Create environment
+    env = Environment(10, 10)
+    env.add_entity(parent)
+    
+    # Force reproduction
+    with patch('random.random', return_value=0.0):  # Always reproduce
+        reproduction.update(parent, env)
+    
+    # Find offspring
+    offspring_id = next(eid for eid in env.entities.keys() if eid != parent.id)
+    offspring = env.entities[offspring_id]
+    
+    # Verify inheritance
+    assert offspring.has_component("energy")
+    assert not offspring.has_component("movement") 
