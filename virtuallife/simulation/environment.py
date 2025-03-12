@@ -215,4 +215,36 @@ class Environment:
 
         # Update entity position
         entity.position = (x, y)
-        self.entity_positions[(x, y)].add(entity.id) 
+        self.entity_positions[(x, y)].add(entity.id)
+
+    def consume_resource(
+        self, 
+        resource_type: str, 
+        position: Tuple[int, int], 
+        amount: float
+    ) -> float:
+        """Consume a resource at a specific position.
+        
+        Args:
+            resource_type: The type of resource to consume
+            position: The (x, y) position
+            amount: The amount to consume
+            
+        Returns:
+            The actual amount consumed (may be less than requested if not enough resource exists)
+        """
+        current = self.get_resource(resource_type, position)
+        if current <= 0:
+            return 0.0
+            
+        # Calculate actual amount consumed
+        consumed = min(current, amount)
+        
+        # Update resource value
+        new_value = current - consumed
+        if new_value > 0:
+            self.resources[resource_type][position] = new_value
+        else:
+            self.remove_resource(resource_type, position)
+            
+        return consumed 
