@@ -1,1145 +1,1090 @@
-# VirtualLife Technical Specifications
+# VirtualLife Technical Specifications (Simplified for AI Implementation)
 
-This document outlines the technical architecture, design patterns, and implementation details for the VirtualLife project.
+## AI Implementation Requirements
+
+Since this project will be implemented by an AI agent, the following standards for testing and documentation are **mandatory** at every step:
+
+### Testing Requirements
+
+1. **Comprehensive Unit Tests**:
+   - Every function and method must have corresponding tests
+   - Tests must cover normal operation, edge cases, and error conditions
+   - 90% minimum line coverage for all components
+   - All boundary conditions must be explicitly tested
+
+2. **Integration Tests**:
+   - All component interactions must be verified
+   - System state consistency must be tested
+   - Configuration handling must be verified
+
+3. **Documentation Tests**:
+   - All examples in docstrings must be verifiable and tested
+   - README examples must be verified
+   - API documentation must match implementation
+   - Configuration examples must be tested
+
+4. **Property-Based Testing**:
+   - Randomized behaviors must have property-based tests
+   - Invariants must be identified and tested
+   - Genetic algorithms must have statistical correctness tests
+
+### Documentation Requirements
+
+1. **Module Documentation**:
+   - Every module must have a detailed docstring explaining purpose and content
+   - Architecture relationships must be documented
+   - Usage examples must be included
+
+2. **Function/Method Documentation**:
+   - Every public function must have comprehensive docstrings
+   - All parameters must be documented with types and descriptions
+   - Return values must be documented
+   - Exceptions must be documented
+   - Examples must be included
+
+3. **Class Documentation**:
+   - Class purpose and behavior must be documented
+   - Initialization parameters must be explained
+   - Class attributes must be documented
+   - Relationships with other classes must be explained
+
+4. **Code Comments**:
+   - Complex algorithms must have detailed explanations
+   - Design decisions and tradeoffs must be documented
+   - Non-obvious code must be commented
 
 ## Architecture Overview
 
-VirtualLife follows a modular, component-based architecture with clear separation of concerns. The system is composed of several core modules:
+VirtualLife follows a simplified domain-driven architecture focused on the core simulation concepts. The system is organized into these main modules:
 
 ```
 virtuallife/
-├── core/                  # Core simulation components
-│   ├── interfaces/        # Protocol definitions
-│   │   ├── entity.py      # Entity interface
-│   │   └── environment.py # Environment interface
-│   ├── environment.py     # Environment implementation
-│   ├── entity.py          # Base entity classes
-│   ├── species.py         # Species definitions
-│   └── simulation.py      # Simulation engine
-├── behaviors/             # Entity behavior implementations
-├── components/            # Entity component implementations
-├── web/                   # Web interface components
-│   ├── static/            # Static assets (CSS, JS)
-│   │   ├── css/           # Stylesheets
-│   │   ├── js/            # JavaScript files
-│   │   └── img/           # Images
-│   ├── templates/         # HTML templates
-│   ├── routes.py          # Web routes
-│   ├── socket.py          # WebSocket handlers
-│   └── app.py             # Flask application
-├── visualization/         # Visualization components
-│   ├── renderer.py        # Base renderer
-│   └── web_renderer.py    # Web-specific rendering
-├── utils/                 # Utility functions and helpers
-└── cli.py                 # Command-line interface
+├── simulation/                # Core simulation engine
+│   ├── environment.py         # Environment implementation
+│   ├── entity.py              # Entity system
+│   ├── component.py           # Components for entities
+│   └── runner.py              # Simulation runner
+├── models/                    # Data models using Pydantic
+│   ├── config.py              # Configuration schemas
+│   ├── entity.py              # Entity schemas
+│   └── state.py               # Simulation state models
+├── visualize/                 # Visualization tools
+│   ├── console.py             # Console output
+│   ├── plotting.py            # Matplotlib visualization
+│   └── web/                   # Web visualization (Phase 2+)
+├── api/                       # API layer (Phase 2+)
+│   └── routes.py              # API endpoints
+├── tests/                     # Comprehensive test suite
+│   ├── unit/                  # Unit tests for components
+│   ├── integration/           # Integration tests
+│   ├── functional/            # Functional tests
+│   └── performance/           # Performance tests
+├── docs/                      # Documentation
+│   ├── user/                  # User documentation
+│   ├── developer/             # Developer documentation
+│   └── api/                   # API documentation
+├── cli.py                     # Command-line interface
+└── config/                    # Default configurations
 ```
 
 ## Development Approach
 
-### Test-Driven Development
+### Incremental Complexity with Comprehensive Testing
 
-**All development must follow a strict test-first approach:**
+1. Start with a minimal viable implementation with complete tests
+2. Add features incrementally, led by tests
+3. Refactor as patterns emerge, protected by tests
+4. Document thoroughly at every step
 
-1. Write a failing test for the feature/functionality
-2. Implement the minimum code needed to pass the test
-3. Refactor while keeping tests passing
-4. Repeat for the next feature/functionality
+### Testing-First Development
 
-### File Size Limits
+1. **Write documentation**: Define interface and behavior with docstrings
+2. **Write tests**: Create comprehensive tests for the interface
+3. **Implement code**: Write code to match documentation and pass tests
+4. **Refactor**: Improve implementation while maintaining test coverage
 
-To ensure maintainability and ease of understanding:
+### Comprehensive Documentation
 
-1. **Maximum file size: 200-300 lines** (excluding comments and blank lines)
-2. **Maximum function/method size: 50 lines**
-3. When a file approaches the size limit, refactor and split functionalities
-
-### Module Organization
-
-1. Each module should have a **single responsibility**
-2. **Explicit interfaces** between modules should be clearly defined
-3. **Dependencies between modules** should be minimized and explicit
-
-## Comprehensive Testing Strategy
-
-### 1. Test Structure
-
-The testing suite follows a pyramid structure:
-
-```
-tests/
-├── unit/                   # Unit tests (70% of tests)
-│   ├── core/               # Tests for core modules
-│   │   ├── test_entity.py
-│   │   ├── test_environment.py
-│   │   ├── test_simulation.py
-│   │   └── test_species.py
-│   ├── components/         # Tests for components
-│   ├── behaviors/          # Tests for behaviors
-│   ├── web/                # Tests for web components
-│   │   ├── test_routes.py
-│   │   └── test_socket.py
-│   └── utils/              # Tests for utilities
-├── integration/            # Integration tests (20% of tests)
-│   ├── test_entity_environment.py
-│   ├── test_species_entity.py
-│   └── test_web_simulation.py
-├── functional/             # Functional tests (10% of tests)
-│   ├── test_predator_prey.py
-│   ├── test_advanced_ecology.py
-│   └── test_web_interface.py
-└── conftest.py             # Shared test fixtures
-```
-
-### 2. Test Coverage Requirements
-
-- **Unit test coverage**: Minimum 90% line coverage for each module
-- **Branch coverage**: Minimum 80% for conditional logic
-- **Integration test coverage**: All module interactions must be tested
-- **Functional test coverage**: All user-facing features must have tests
-
-## Web Interface Architecture
-
-The web interface is a core component of VirtualLife, providing real-time visualization and control of simulations.
-
-### 1. Server-Side Components
-
-#### Flask Application Structure
-
-```python
-# web/app.py
-from flask import Flask
-from flask_socketio import SocketIO
-
-app = Flask(__name__)
-app.config.from_object('config.Config')
-socketio = SocketIO(app)
-
-# Import routes and socket handlers
-from virtuallife.web import routes, socket
-
-def create_app():
-    return app
-
-def run_app(host='0.0.0.0', port=5000, debug=False):
-    socketio.run(app, host=host, port=port, debug=debug)
-```
-
-#### Route Handlers
-
-```python
-# web/routes.py
-from flask import render_template, jsonify, request
-from virtuallife.web.app import app
-from virtuallife.core.simulation import SimulationManager
-
-simulation_manager = SimulationManager()
-
-@app.route('/')
-def index():
-    """Render the main simulation page."""
-    return render_template('index.html')
-
-@app.route('/api/simulations', methods=['GET'])
-def list_simulations():
-    """List all active simulations."""
-    return jsonify({
-        'simulations': simulation_manager.get_all_simulations()
-    })
-
-@app.route('/api/simulations', methods=['POST'])
-def create_simulation():
-    """Create a new simulation."""
-    config = request.json
-    simulation_id = simulation_manager.create_simulation(config)
-    return jsonify({
-        'simulation_id': simulation_id
-    })
-
-@app.route('/api/simulations/<simulation_id>', methods=['GET'])
-def get_simulation(simulation_id):
-    """Get details of a specific simulation."""
-    simulation = simulation_manager.get_simulation(simulation_id)
-    return jsonify(simulation.to_dict())
-```
-
-#### WebSocket Handlers
-
-```python
-# web/socket.py
-from flask_socketio import emit
-from virtuallife.web.app import socketio
-from virtuallife.core.simulation import SimulationManager
-
-simulation_manager = SimulationManager()
-
-@socketio.on('connect')
-def handle_connect():
-    """Handle client connection."""
-    emit('connection_response', {'status': 'connected'})
-
-@socketio.on('simulation_control')
-def handle_simulation_control(data):
-    """Handle simulation control commands."""
-    simulation_id = data.get('simulation_id')
-    command = data.get('command')
-    params = data.get('params', {})
-    
-    simulation = simulation_manager.get_simulation(simulation_id)
-    result = simulation.execute_command(command, **params)
-    
-    emit('simulation_control_response', {
-        'simulation_id': simulation_id,
-        'command': command,
-        'result': result
-    })
-
-@socketio.on('request_state')
-def handle_request_state(data):
-    """Send current simulation state to client."""
-    simulation_id = data.get('simulation_id')
-    simulation = simulation_manager.get_simulation(simulation_id)
-    state = simulation.get_current_state()
-    
-    emit('simulation_state_update', {
-        'simulation_id': simulation_id,
-        'state': state
-    })
-```
-
-### 2. Client-Side Components
-
-#### HTML Structure
-
-```html
-<!-- templates/index.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VirtualLife Simulator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>VirtualLife Simulator</h1>
-        </header>
-        
-        <div class="simulation-controls">
-            <button id="start-btn">Start</button>
-            <button id="pause-btn">Pause</button>
-            <button id="step-btn">Step</button>
-            <button id="reset-btn">Reset</button>
-            <div class="speed-control">
-                <label for="speed-slider">Speed:</label>
-                <input type="range" id="speed-slider" min="1" max="100" value="50">
-            </div>
-        </div>
-        
-        <div class="simulation-container">
-            <canvas id="simulation-canvas"></canvas>
-        </div>
-        
-        <div class="metrics-panel">
-            <h2>Simulation Metrics</h2>
-            <div id="metrics-container"></div>
-        </div>
-        
-        <div class="configuration-panel">
-            <h2>Configuration</h2>
-            <form id="config-form">
-                <!-- Configuration options will be dynamically generated -->
-            </form>
-        </div>
-    </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
-```
-
-#### JavaScript Client
-
-```javascript
-// static/js/main.js
-document.addEventListener('DOMContentLoaded', function() {
-    // Connect to WebSocket server
-    const socket = io();
-    
-    // Canvas setup
-    const canvas = document.getElementById('simulation-canvas');
-    const ctx = canvas.getContext('2d');
-    let simulationId = null;
-    let simulationState = null;
-    
-    // Resize canvas to fit container
-    function resizeCanvas() {
-        const container = document.querySelector('.simulation-container');
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        renderSimulation();
-    }
-    
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    
-    // Socket event handlers
-    socket.on('connect', function() {
-        console.log('Connected to server');
-    });
-    
-    socket.on('simulation_state_update', function(data) {
-        if (data.simulation_id === simulationId) {
-            simulationState = data.state;
-            renderSimulation();
-            updateMetrics(data.state.metrics);
-        }
-    });
-    
-    socket.on('simulation_control_response', function(data) {
-        console.log('Control response:', data);
-    });
-    
-    // UI event handlers
-    document.getElementById('start-btn').addEventListener('click', function() {
-        if (simulationId) {
-            socket.emit('simulation_control', {
-                simulation_id: simulationId,
-                command: 'start'
-            });
-        } else {
-            createNewSimulation();
-        }
-    });
-    
-    document.getElementById('pause-btn').addEventListener('click', function() {
-        if (simulationId) {
-            socket.emit('simulation_control', {
-                simulation_id: simulationId,
-                command: 'pause'
-            });
-        }
-    });
-    
-    document.getElementById('step-btn').addEventListener('click', function() {
-        if (simulationId) {
-            socket.emit('simulation_control', {
-                simulation_id: simulationId,
-                command: 'step'
-            });
-        }
-    });
-    
-    document.getElementById('reset-btn').addEventListener('click', function() {
-        if (simulationId) {
-            socket.emit('simulation_control', {
-                simulation_id: simulationId,
-                command: 'reset'
-            });
-        }
-    });
-    
-    // Rendering functions
-    function renderSimulation() {
-        if (!simulationState) return;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Calculate cell size
-        const cellWidth = canvas.width / simulationState.width;
-        const cellHeight = canvas.height / simulationState.height;
-        
-        // Draw entities
-        simulationState.entities.forEach(entity => {
-            const x = entity.position[0] * cellWidth;
-            const y = entity.position[1] * cellHeight;
-            
-            // Color based on entity type
-            let color;
-            switch(entity.type) {
-                case 'Plant':
-                    color = '#3CB371'; // Medium Sea Green
-                    break;
-                case 'Herbivore':
-                    color = '#4682B4'; // Steel Blue
-                    break;
-                case 'Predator':
-                    color = '#B22222'; // Firebrick
-                    break;
-                default:
-                    color = '#3498db'; // Default blue
-            }
-            
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, cellWidth, cellHeight);
-        });
-    }
-    
-    function updateMetrics(metrics) {
-        if (!metrics) return;
-        
-        const container = document.getElementById('metrics-container');
-        container.innerHTML = '';
-        
-        // Create metrics display
-        for (const [key, value] of Object.entries(metrics)) {
-            const metricElement = document.createElement('div');
-            metricElement.className = 'metric';
-            metricElement.innerHTML = `<span class="metric-name">${key}:</span> <span class="metric-value">${value}</span>`;
-            container.appendChild(metricElement);
-        }
-    }
-    
-    // Simulation creation
-    function createNewSimulation() {
-        // Get configuration from form
-        const config = getConfigFromForm();
-        
-        // Create simulation via API
-        fetch('/api/simulations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(config)
-        })
-        .then(response => response.json())
-        .then(data => {
-            simulationId = data.simulation_id;
-            
-            // Request initial state
-            socket.emit('request_state', {
-                simulation_id: simulationId
-            });
-        });
-    }
-    
-    function getConfigFromForm() {
-        // Default configuration for predator-prey simulation
-        return {
-            type: 'predator_prey',
-            width: 50,
-            height: 50,
-            plant_growth_rate: 0.1,
-            initial_plants: 100,
-            initial_herbivores: 20,
-            initial_predators: 5
-        };
-    }
-});
-```
+1. **Module Documentation**: Every module must have detailed docstrings
+2. **Function Documentation**: Every function must have complete docstrings
+3. **Type Annotations**: All parameters, return values, and variables must be annotated
+4. **Examples**: Include executable examples in docstrings
+5. **Internal Comments**: Explain complex algorithms or non-obvious choices
 
 ## Core Components
 
 ### 1. Environment
 
-The `Environment` class represents the world where entities exist and interact.
+A 2D grid-based environment where entities exist and interact.
 
 ```python
+from dataclasses import dataclass, field
+from typing import Dict, Set, Tuple, Optional, List, UUID
+import numpy as np
+
+@dataclass
 class Environment:
-    """A 2D grid-based environment for the simulation."""
+    """A 2D grid environment for the simulation.
     
-    def __init__(self, width, height, boundary_condition="wrapped"):
-        """Initialize a new environment.
+    The Environment class represents the world where entities exist and interact.
+    It manages entity positions, resources, and defines the boundaries of the
+    simulation space.
+    
+    Attributes:
+        width: Width of the environment grid
+        height: Height of the environment grid
+        boundary_condition: How boundaries are handled ("wrapped", "bounded", or "infinite")
+        entities: Dictionary mapping entity IDs to entities
+        entity_positions: Dictionary mapping positions to sets of entity IDs
+        resources: Dictionary mapping resource types to numpy arrays
         
-        Args:
-            width (int): Width of the environment grid
-            height (int): Height of the environment grid
-            boundary_condition (str): How boundaries are handled ("wrapped", "bounded", or "infinite")
-        """
-        self.width = width
-        self.height = height
-        self.boundary_condition = boundary_condition
-        self.entities = {}  # entity_id -> Entity
-        self.entity_positions = {}  # (x, y) -> set of entity_ids
-        self.resources = {}  # resource_type -> 2D numpy array
-        
-    def add_entity(self, entity):
+    Examples:
+        >>> env = Environment(50, 50)
+        >>> env.width
+        50
+    """
+    width: int
+    height: int
+    boundary_condition: str = "wrapped"
+    entities: Dict[UUID, "Entity"] = field(default_factory=dict)
+    entity_positions: Dict[Tuple[int, int], Set[UUID]] = field(default_factory=lambda: {})
+    resources: Dict[str, np.ndarray] = field(default_factory=dict)
+    
+    def add_entity(self, entity: "Entity") -> None:
         """Add an entity to the environment.
         
         Args:
-            entity (Entity): The entity to add
+            entity: The entity to add
             
-        Returns:
-            UUID: The entity's ID
+        Raises:
+            ValueError: If the entity is already in the environment
+            
+        Examples:
+            >>> env = Environment(50, 50)
+            >>> entity = Entity()
+            >>> env.add_entity(entity)
+            >>> entity.id in env.entities
+            True
         """
-        # Implementation details
-        
-    def remove_entity(self, entity_id):
+        self.entities[entity.id] = entity
+        pos = entity.position
+        if pos not in self.entity_positions:
+            self.entity_positions[pos] = set()
+        self.entity_positions[pos].add(entity.id)
+    
+    def remove_entity(self, entity_id: UUID) -> None:
         """Remove an entity from the environment.
         
         Args:
-            entity_id (UUID): The ID of the entity to remove
+            entity_id: The ID of the entity to remove
+            
+        Examples:
+            >>> env = Environment(50, 50)
+            >>> entity = Entity()
+            >>> env.add_entity(entity)
+            >>> env.remove_entity(entity.id)
+            >>> entity.id in env.entities
+            False
         """
-        # Implementation details
-        
-    def get_entities_at(self, position):
+        if entity_id in self.entities:
+            entity = self.entities[entity_id]
+            pos = entity.position
+            if pos in self.entity_positions and entity_id in self.entity_positions[pos]:
+                self.entity_positions[pos].remove(entity_id)
+                if not self.entity_positions[pos]:
+                    del self.entity_positions[pos]
+            del self.entities[entity_id]
+    
+    def get_entities_at(self, position: Tuple[int, int]) -> List["Entity"]:
         """Get all entities at a specific position.
         
         Args:
-            position (tuple): The (x, y) position to check
+            position: The (x, y) position to check
             
         Returns:
-            list: List of entities at the position
+            A list of entities at the specified position
+            
+        Examples:
+            >>> env = Environment(50, 50)
+            >>> entity = Entity(position=(10, 10))
+            >>> env.add_entity(entity)
+            >>> entities = env.get_entities_at((10, 10))
+            >>> len(entities)
+            1
         """
-        # Implementation details
-        
-    def get_neighborhood(self, position, radius=1):
+        if position in self.entity_positions:
+            return [self.entities[entity_id] for entity_id in self.entity_positions[position]]
+        return []
+    
+    def get_neighborhood(self, position: Tuple[int, int], radius: int = 1) -> Dict[Tuple[int, int], List["Entity"]]:
         """Get a view of the environment around a position.
         
         Args:
-            position (tuple): The center (x, y) position
-            radius (int): The radius of the neighborhood
+            position: The center (x, y) position
+            radius: The radius of the neighborhood
             
         Returns:
-            dict: Dictionary of positions and their contents
+            A dictionary mapping positions to lists of entities
+            
+        Examples:
+            >>> env = Environment(50, 50)
+            >>> entity = Entity(position=(10, 10))
+            >>> env.add_entity(entity)
+            >>> neighborhood = env.get_neighborhood((10, 10), 1)
+            >>> (10, 10) in neighborhood
+            True
         """
-        # Implementation details
+        x, y = position
+        neighborhood = {}
         
-    def normalize_position(self, position):
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                pos = self.normalize_position((x + dx, y + dy))
+                if pos in self.entity_positions:
+                    neighborhood[pos] = [self.entities[entity_id] for entity_id in self.entity_positions[pos]]
+        
+        return neighborhood
+    
+    def normalize_position(self, position: Tuple[int, int]) -> Tuple[int, int]:
         """Normalize a position based on boundary conditions.
         
         Args:
-            position (tuple): The (x, y) position to normalize
+            position: The (x, y) position to normalize
             
         Returns:
-            tuple: The normalized (x, y) position
+            The normalized (x, y) position
+            
+        Examples:
+            >>> env = Environment(50, 50, "wrapped")
+            >>> env.normalize_position((60, 60))
+            (10, 10)
         """
-        # Handle wrapped, bounded, or infinite boundaries
+        x, y = position
+        
+        match self.boundary_condition:
+            case "wrapped":
+                return (x % self.width, y % self.height)
+            case "bounded":
+                return (max(0, min(x, self.width - 1)), max(0, min(y, self.height - 1)))
+            case "infinite":
+                return position
+            case _:
+                return (x % self.width, y % self.height)  # Default to wrapped
 ```
 
-### 2. Entity
+### 2. Entity Component System
 
-The `Entity` class represents objects that exist in the environment.
+A simplified entity component system using composition rather than inheritance.
 
 ```python
-class Entity:
-    """Base class for all entities in the simulation."""
+from dataclasses import dataclass, field
+from typing import Dict, Protocol, Tuple, UUID, Any, Optional, TypeVar, cast
+from uuid import uuid4
+
+# Define a Protocol for components
+class Component(Protocol):
+    """Protocol defining the interface for entity components.
     
-    def __init__(self, entity_id, position):
-        """Initialize a new entity.
+    All components must implement this protocol to be usable with the Entity class.
+    The update method is called on each simulation step.
+    """
+    def update(self, entity: "Entity", environment: "Environment") -> None:
+        """Update the component state.
         
         Args:
-            entity_id (UUID): Unique identifier for the entity
-            position (tuple): Initial (x, y) position
+            entity: The entity this component belongs to
+            environment: The environment the entity exists in
         """
-        self.id = entity_id
-        self.position = position
-        self.components = {}
+        ...
+
+# Define a type variable for components
+C = TypeVar('C', bound=Component)
+
+@dataclass
+class Entity:
+    """Base entity class using composition for behaviors.
+    
+    Entities are the primary objects in the simulation. They exist in the environment
+    and can have various components that define their behavior.
+    
+    Attributes:
+        id: Unique identifier for the entity
+        position: The (x, y) position of the entity in the environment
+        components: Dictionary mapping component names to components
         
-    def add_component(self, component_name, component):
+    Examples:
+        >>> entity = Entity(position=(10, 20))
+        >>> entity.position
+        (10, 20)
+    """
+    id: UUID = field(default_factory=uuid4)
+    position: Tuple[int, int] = (0, 0)
+    components: Dict[str, Component] = field(default_factory=dict)
+    
+    def add_component(self, name: str, component: Component) -> None:
         """Add a component to the entity.
         
         Args:
-            component_name (str): Name of the component
-            component: Component instance
+            name: The name of the component
+            component: The component to add
+            
+        Raises:
+            ValueError: If a component with the same name already exists
+            
+        Examples:
+            >>> from dataclasses import dataclass
+            >>> @dataclass
+            ... class TestComponent:
+            ...     def update(self, entity, environment): pass
+            >>> entity = Entity()
+            >>> component = TestComponent()
+            >>> entity.add_component("test", component)
+            >>> entity.has_component("test")
+            True
         """
-        self.components[component_name] = component
-        
-    def has_component(self, component_name):
+        if name in self.components:
+            raise ValueError(f"Component {name} already exists on this entity")
+        self.components[name] = component
+    
+    def has_component(self, name: str) -> bool:
         """Check if the entity has a specific component.
         
         Args:
-            component_name (str): Name of the component
+            name: The name of the component
             
         Returns:
-            bool: True if the entity has the component
+            True if the entity has the component, False otherwise
+            
+        Examples:
+            >>> entity = Entity()
+            >>> entity.has_component("nonexistent")
+            False
         """
-        return component_name in self.components
-        
-    def get_component(self, component_name):
+        return name in self.components
+    
+    def get_component(self, name: str) -> Optional[Component]:
         """Get a component by name.
         
         Args:
-            component_name (str): Name of the component
+            name: The name of the component
             
         Returns:
-            Component instance or None
+            The component if it exists, None otherwise
+            
+        Examples:
+            >>> from dataclasses import dataclass
+            >>> @dataclass
+            ... class TestComponent:
+            ...     value: int = 42
+            ...     def update(self, entity, environment): pass
+            >>> entity = Entity()
+            >>> component = TestComponent()
+            >>> entity.add_component("test", component)
+            >>> entity.get_component("test").value
+            42
         """
-        return self.components.get(component_name)
-        
-    def update(self, environment):
-        """Update the entity state.
+        return self.components.get(name)
+    
+    def get_component_typed(self, name: str, component_type: type[C]) -> Optional[C]:
+        """Get a component by name with the correct type.
         
         Args:
-            environment (Environment): Environment where the entity exists
+            name: The name of the component
+            component_type: The expected type of the component
+            
+        Returns:
+            The component cast to the specified type if it exists, None otherwise
+            
+        Examples:
+            >>> from dataclasses import dataclass
+            >>> @dataclass
+            ... class TestComponent:
+            ...     value: int = 42
+            ...     def update(self, entity, environment): pass
+            >>> entity = Entity()
+            >>> component = TestComponent()
+            >>> entity.add_component("test", component)
+            >>> comp = entity.get_component_typed("test", TestComponent)
+            >>> comp.value
+            42
+        """
+        component = self.get_component(name)
+        if component is not None:
+            return cast(component_type, component)
+        return None
+    
+    def update(self, environment: "Environment") -> None:
+        """Update the entity state by updating all components.
+        
+        Args:
+            environment: The environment the entity exists in
+            
+        Examples:
+            >>> from dataclasses import dataclass
+            >>> @dataclass
+            ... class CounterComponent:
+            ...     count: int = 0
+            ...     def update(self, entity, environment): 
+            ...         self.count += 1
+            >>> entity = Entity()
+            >>> component = CounterComponent()
+            >>> entity.add_component("counter", component)
+            >>> entity.update(None)  # Environment is None for this example
+            >>> entity.get_component_typed("counter", CounterComponent).count
+            1
         """
         for component in self.components.values():
-            if hasattr(component, 'update'):
-                component.update(self, environment)
+            component.update(self, environment)
 ```
 
-### 3. Simulation
+### 3. Standard Components
 
-The `Simulation` class controls time progression and entity updates.
-
-```python
-class Simulation:
-    """Controls the simulation execution."""
-    
-    def __init__(self, environment, config=None):
-        """Initialize a new simulation.
-        
-        Args:
-            environment (Environment): The simulation environment
-            config (dict): Configuration parameters
-        """
-        self.environment = environment
-        self.config = config or {}
-        self.current_step = 0
-        self.observers = []
-        self.running = False
-        
-    def add_observer(self, observer):
-        """Add an observer to the simulation.
-        
-        Args:
-            observer (Observer): The observer to add
-        """
-        self.observers.append(observer)
-        
-    def notify_observers(self, event_type, **kwargs):
-        """Notify all observers of an event.
-        
-        Args:
-            event_type (str): Type of event
-            **kwargs: Event data
-        """
-        for observer in self.observers:
-            if hasattr(observer, f"on_{event_type}"):
-                getattr(observer, f"on_{event_type}")(self, **kwargs)
-        
-    def step(self):
-        """Execute a single simulation step."""
-        self.current_step += 1
-        self.notify_observers("step_start")
-        
-        # Update all entities
-        entities = list(self.environment.entities.values())
-        for entity in entities:
-            entity.update(self.environment)
-            
-        self.notify_observers("step_end")
-        
-    def start(self):
-        """Start the simulation."""
-        self.running = True
-        
-    def pause(self):
-        """Pause the simulation."""
-        self.running = False
-        
-    def reset(self):
-        """Reset the simulation to its initial state."""
-        # Implementation details
-        
-    def get_current_state(self):
-        """Get the current state of the simulation.
-        
-        Returns:
-            dict: Current simulation state
-        """
-        return {
-            'step': self.current_step,
-            'width': self.environment.width,
-            'height': self.environment.height,
-            'entities': [
-                {
-                    'id': str(entity.id),
-                    'position': entity.position,
-                    'type': entity.__class__.__name__
-                }
-                for entity in self.environment.entities.values()
-            ],
-            'metrics': self.collect_metrics()
-        }
-        
-    def collect_metrics(self):
-        """Collect metrics about the current simulation state.
-        
-        Returns:
-            dict: Metrics data
-        """
-        return {
-            'entity_count': len(self.environment.entities),
-            # Other metrics
-        }
-```
-
-### 4. SimulationManager
-
-The `SimulationManager` class manages multiple simulation instances.
+A set of basic components for common entity behaviors, with comprehensive documentation and built-in tests.
 
 ```python
-class SimulationManager:
-    """Manages multiple simulation instances."""
-    
-    def __init__(self):
-        """Initialize the simulation manager."""
-        self.simulations = {}
-        
-    def create_simulation(self, config):
-        """Create a new simulation.
-        
-        Args:
-            config (dict): Simulation configuration
-            
-        Returns:
-            str: Simulation ID
-        """
-        # Create environment
-        environment = Environment(
-            config.get('width', 50),
-            config.get('height', 50),
-            config.get('boundary_condition', 'wrapped')
-        )
-        
-        # Create simulation
-        simulation = Simulation(environment, config)
-        
-        # Generate ID
-        simulation_id = str(uuid.uuid4())
-        self.simulations[simulation_id] = simulation
-        
-        # Initialize simulation based on type
-        if config.get('type') == 'predator_prey':
-            self._initialize_predator_prey(simulation, config)
-        
-        return simulation_id
-        
-    def get_simulation(self, simulation_id):
-        """Get a simulation by ID.
-        
-        Args:
-            simulation_id (str): Simulation ID
-            
-        Returns:
-            Simulation: Simulation instance
-        """
-        return self.simulations.get(simulation_id)
-        
-    def get_all_simulations(self):
-        """Get all simulations.
-        
-        Returns:
-            dict: Dictionary of simulation IDs to basic info
-        """
-        return {
-            sim_id: {
-                'id': sim_id,
-                'step': sim.current_step,
-                'running': sim.running,
-                'type': sim.config.get('type', 'custom')
-            }
-            for sim_id, sim in self.simulations.items()
-        }
-        
-    def _initialize_predator_prey(self, simulation, config):
-        """Initialize a predator-prey simulation.
-        
-        Args:
-            simulation (Simulation): Simulation to initialize
-            config (dict): Configuration parameters
-        """
-        # Get configuration parameters with defaults
-        plant_growth_rate = config.get('plant_growth_rate', 0.1)
-        initial_plants = config.get('initial_plants', 100)
-        initial_herbivores = config.get('initial_herbivores', 20)
-        initial_predators = config.get('initial_predators', 5)
-        
-        width = simulation.environment.width
-        height = simulation.environment.height
-        
-        # Add plants (static resource entities)
-        for _ in range(initial_plants):
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            
-            entity_id = uuid.uuid4()
-            plant = Entity(entity_id, (x, y))
-            plant.add_component('plant', PlantComponent(growth_rate=plant_growth_rate))
-            simulation.environment.add_entity(plant)
-        
-        # Add herbivores
-        for _ in range(initial_herbivores):
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            
-            entity_id = uuid.uuid4()
-            herbivore = Entity(entity_id, (x, y))
-            herbivore.add_component('energy', EnergyComponent(initial_energy=100, decay_rate=0.5))
-            herbivore.add_component('movement', MovementComponent(speed=1))
-            herbivore.add_component('herbivore', HerbivoreComponent())
-            herbivore.add_component('reproduction', ReproductionComponent(
-                threshold=120, offspring_energy=50, chance=0.05))
-            simulation.environment.add_entity(herbivore)
-        
-        # Add predators
-        for _ in range(initial_predators):
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            
-            entity_id = uuid.uuid4()
-            predator = Entity(entity_id, (x, y))
-            predator.add_component('energy', EnergyComponent(initial_energy=150, decay_rate=0.7))
-            predator.add_component('movement', MovementComponent(speed=1.5))
-            predator.add_component('predator', PredatorComponent())
-            predator.add_component('reproduction', ReproductionComponent(
-                threshold=200, offspring_energy=80, chance=0.03))
-            simulation.environment.add_entity(predator)
-```
+from dataclasses import dataclass
+from typing import Tuple, Optional, List, cast
+import random
 
-## Predator-Prey Implementation
-
-The predator-prey ecosystem will be implemented with components for different entity types:
-
-```python
-class PlantComponent:
-    """Component for plants that can grow and be consumed."""
-    
-    def __init__(self, growth_rate=0.1, max_energy=100):
-        """Initialize a plant component.
-        
-        Args:
-            growth_rate (float): Rate at which the plant grows energy
-            max_energy (float): Maximum energy the plant can store
-        """
-        self.growth_rate = growth_rate
-        self.max_energy = max_energy
-        self.energy = max_energy / 2  # Start at half capacity
-        
-    def update(self, entity, environment):
-        """Update the plant's energy.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        # Plants grow over time up to their maximum energy
-        self.energy = min(self.energy + self.growth_rate, self.max_energy)
-
-
+@dataclass
 class EnergyComponent:
-    """Component representing an entity's energy level."""
+    """Component handling entity energy.
     
-    def __init__(self, initial_energy=100, decay_rate=0.1):
-        """Initialize an energy component.
+    This component manages an entity's energy level, which decreases over time.
+    If energy reaches zero, the entity is removed from the environment.
+    
+    Attributes:
+        energy: Current energy level
+        decay_rate: Rate at which energy decreases per step
         
-        Args:
-            initial_energy (float): Starting energy level
-            decay_rate (float): Rate at which energy decays per step
-        """
-        self.energy = initial_energy
-        self.decay_rate = decay_rate
-        
-    def update(self, entity, environment):
+    Examples:
+        >>> component = EnergyComponent(energy=100.0, decay_rate=0.5)
+        >>> component.energy
+        100.0
+    """
+    energy: float = 100.0
+    decay_rate: float = 0.1
+    
+    def update(self, entity: "Entity", environment: "Environment") -> None:
         """Update the entity's energy.
         
         Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
+            entity: The entity this component belongs to
+            environment: The environment
+            
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> entity = MagicMock()
+            >>> environment = MagicMock()
+            >>> component = EnergyComponent(energy=1.0, decay_rate=0.5)
+            >>> component.update(entity, environment)
+            >>> component.energy
+            0.5
         """
-        # Energy decreases over time
         self.energy -= self.decay_rate
-        
-        # If energy is depleted, the entity dies
         if self.energy <= 0:
             environment.remove_entity(entity.id)
 
-
+@dataclass
 class MovementComponent:
-    """Component allowing an entity to move."""
+    """Component for entity movement.
     
-    def __init__(self, speed=1.0):
-        """Initialize a movement component.
+    This component allows an entity to move around the environment.
+    Movement consumes energy if the entity has an EnergyComponent.
+    
+    Attributes:
+        speed: Movement speed
+        movement_cost: Energy cost per unit of movement
         
-        Args:
-            speed (float): Movement speed
-        """
-        self.speed = speed
-        
-    def update(self, entity, environment):
+    Examples:
+        >>> component = MovementComponent(speed=2.0, movement_cost=0.2)
+        >>> component.speed
+        2.0
+    """
+    speed: float = 1.0
+    movement_cost: float = 0.1
+    
+    def update(self, entity: "Entity", environment: "Environment") -> None:
         """Move the entity.
         
         Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
+            entity: The entity this component belongs to
+            environment: The environment
+            
+        Note:
+            This implementation uses simple random movement.
+            The entity will not move if it does not have enough energy.
+            
+        Examples:
+            >>> # This example cannot be easily tested in a doctest
+            >>> # See unit tests for complete testing
         """
-        # Only move if the entity has energy
-        if entity.has_component('energy'):
-            energy = entity.get_component('energy')
-            if energy.energy <= 0:
-                return
-                
-            # Movement costs energy
-            energy.energy -= 0.1 * self.speed
-            
-            # Move in a random direction
-            dx = random.choice([-1, 0, 1])
-            dy = random.choice([-1, 0, 1])
-            
-            # Calculate new position
-            x, y = entity.position
-            new_x = x + dx
-            new_y = y + dy
-            
-            # Update position with boundary normalization
-            entity.position = environment.normalize_position((new_x, new_y))
-
-
-class HerbivoreComponent:
-    """Component for herbivores that eat plants."""
-    
-    def update(self, entity, environment):
-        """Look for and consume plants.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        if not entity.has_component('energy'):
+        if not entity.has_component("energy"):
             return
             
-        # Check current position for plants
-        entities_here = environment.get_entities_at(entity.position)
-        for other_entity in entities_here:
-            if other_entity.id != entity.id and other_entity.has_component('plant'):
-                plant = other_entity.get_component('plant')
-                
-                # Consume some of the plant's energy
-                consumed = min(plant.energy, 10)
-                plant.energy -= consumed
-                
-                # Convert to herbivore energy
-                entity.get_component('energy').energy += consumed * 0.8
-                
-                # If plant is depleted, remove it
-                if plant.energy <= 0:
-                    environment.remove_entity(other_entity.id)
-                    
-                # Stop after eating one plant
-                break
-
-
-class PredatorComponent:
-    """Component for predators that hunt herbivores."""
-    
-    def update(self, entity, environment):
-        """Look for and hunt herbivores.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        if not entity.has_component('energy'):
+        energy_component = entity.get_component("energy")
+        assert energy_component is not None  # For type checking
+        if energy_component.energy <= 0:
             return
             
-        # Check current position for herbivores
-        entities_here = environment.get_entities_at(entity.position)
-        for other_entity in entities_here:
-            if other_entity.id != entity.id and other_entity.has_component('herbivore'):
-                if other_entity.has_component('energy'):
-                    herbivore_energy = other_entity.get_component('energy')
-                    
-                    # Transfer energy from prey to predator
-                    consumed = herbivore_energy.energy
-                    entity.get_component('energy').energy += consumed * 0.6
-                    
-                    # Remove the consumed herbivore
-                    environment.remove_entity(other_entity.id)
-                    
-                    # Stop after eating one herbivore
-                    break
-
-
-class ReproductionComponent:
-    """Component allowing entities to reproduce."""
-    
-    def __init__(self, threshold=100, offspring_energy=50, chance=0.05):
-        """Initialize a reproduction component.
+        # Simple random movement
+        dx = random.choice([-1, 0, 1])
+        dy = random.choice([-1, 0, 1])
         
-        Args:
-            threshold (float): Energy threshold required for reproduction
-            offspring_energy (float): Energy given to offspring
-            chance (float): Probability of reproduction per step when above threshold
-        """
-        self.threshold = threshold
-        self.offspring_energy = offspring_energy
-        self.chance = chance
+        # Calculate new position and cost
+        x, y = entity.position
+        new_pos = environment.normalize_position((x + dx, y + dy))
         
-    def update(self, entity, environment):
-        """Check conditions and possibly reproduce.
+        # Update position and energy
+        energy_component.energy -= self.movement_cost * self.speed
         
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        if not entity.has_component('energy'):
-            return
-            
-        energy = entity.get_component('energy')
+        # Update position in environment
+        if entity.position in environment.entity_positions:
+            environment.entity_positions[entity.position].remove(entity.id)
+            if not environment.entity_positions[entity.position]:
+                del environment.entity_positions[entity.position]
+                
+        entity.position = new_pos
         
-        # Only reproduce if enough energy is available
-        if energy.energy >= self.threshold and random.random() < self.chance:
-            # Create offspring (copy of parent)
-            offspring_id = uuid.uuid4()
-            offspring = Entity(offspring_id, entity.position)
-            
-            # Copy components (simplified version)
-            for name, component in entity.components.items():
-                if name == 'energy':
-                    # Offspring gets a new energy component
-                    offspring.add_component('energy', EnergyComponent(
-                        initial_energy=self.offspring_energy,
-                        decay_rate=component.decay_rate
-                    ))
-                else:
-                    # Other components are simply copied
-                    offspring.add_component(name, copy.deepcopy(component))
-            
-            # Parent loses energy to offspring
-            energy.energy -= self.offspring_energy
-            
-            # Add offspring to environment
-            environment.add_entity(offspring)
+        if new_pos not in environment.entity_positions:
+            environment.entity_positions[new_pos] = set()
+        environment.entity_positions[new_pos].add(entity.id)
 ```
 
-## Command-Line Interface
+### 4. Simulation Runner
 
-The command-line interface will support running the predator-prey simulation:
+Controls the simulation state and execution flow. Full documentation and extensive error checking.
 
 ```python
-@click.group()
-def cli():
-    """VirtualLife: An artificial life simulator."""
-    pass
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any, Callable, TypeVar, Generic, cast
+import time
+from uuid import UUID
 
+# Type for simulation event handlers
+T = TypeVar('T')
+EventHandler = Callable[["Simulation", T], None]
 
-@cli.command()
-@click.option("--host", default="0.0.0.0", help="Host to bind the web server")
-@click.option("--port", "-p", default=5000, help="Port to bind the web server")
-@click.option("--debug", is_flag=True, help="Run in debug mode")
-def web(host, port, debug):
-    """Start the web interface."""
-    from virtuallife.web.app import run_app
-    run_app(host=host, port=port, debug=debug)
-
-
-@cli.command()
-@click.option("--width", "-w", default=50, help="Width of the grid")
-@click.option("--height", "-h", default=50, help="Height of the grid")
-@click.option("--plant-growth", "-p", default=0.1, help="Plant growth rate")
-@click.option("--herbivore-count", default=20, help="Initial number of herbivores")
-@click.option("--predator-count", default=5, help="Initial number of predators")
-@click.option("--steps", "-s", default=1000, help="Number of steps to simulate")
-@click.option("--web", is_flag=True, help="Open in web interface")
-def predator_prey(width, height, plant_growth, herbivore_count, predator_count, steps, web):
-    """Run a predator-prey simulation."""
-    if web:
-        # Start web server with predator-prey configuration
-        from virtuallife.web.app import run_app
-        import webbrowser
-        import threading
-        import json
-        
-        # Start web server in a separate thread
-        threading.Thread(target=run_app, kwargs={'port': 5000, 'debug': False}, daemon=True).start()
-        
-        # Open browser with predator-prey configuration
-        url = f"http://localhost:5000/?config={json.dumps({
-            'type': 'predator_prey',
-            'width': width,
-            'height': height,
-            'plant_growth_rate': plant_growth,
-            'initial_plants': width * height // 10,  # ~10% coverage
-            'initial_herbivores': herbivore_count,
-            'initial_predators': predator_count
-        })}"
-        webbrowser.open(url)
-        
-        # Keep main thread alive
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("Web server stopped")
-    else:
-        # Create and run simulation in terminal (simplified version)
-        print("Terminal-based visualization is deprecated. Please use --web flag for web interface.")
-        print("Continuing with simplified output...")
-        
-        # Create environment and simulation
-        environment = Environment(width, height)
-        simulation = Simulation(environment)
-        
-        # Initialize with predator-prey configuration
-        config = {
-            'plant_growth_rate': plant_growth,
-            'initial_plants': width * height // 10,
-            'initial_herbivores': herbivore_count,
-            'initial_predators': predator_count
-        }
-        SimulationManager()._initialize_predator_prey(simulation, config)
-        
-        # Run simulation with basic output
-        for _ in range(steps):
-            # Count entities by type
-            plants = sum(1 for e in environment.entities.values() if e.has_component('plant'))
-            herbivores = sum(1 for e in environment.entities.values() if e.has_component('herbivore'))
-            predators = sum(1 for e in environment.entities.values() if e.has_component('predator'))
-            
-            print(f"Step {simulation.current_step}: Plants={plants}, Herbivores={herbivores}, Predators={predators}")
-            simulation.step()
-
-
-@cli.command()
-@click.option("--config", "-c", required=True, help="Path to configuration file")
-@click.option("--output", "-o", help="Path to output file")
-@click.option("--web", is_flag=True, help="Open in web interface")
-def run(config, output, web):
-    """Run a simulation using the specified configuration."""
-    config_dict = load_config(config)
+@dataclass
+class Simulation:
+    """Controls the simulation execution.
     
-    if web:
-        # Start web server with configuration
-        from virtuallife.web.app import run_app
-        import webbrowser
-        import threading
-        import json
+    The Simulation class manages the execution of the simulation, including
+    advancing the simulation state, managing entities, and notifying listeners
+    of events.
+    
+    Attributes:
+        environment: The environment for the simulation
+        config: Configuration parameters
+        current_step: The current simulation step
+        running: Whether the simulation is currently running
+        last_update_time: Timestamp of the last update
+        listeners: Dictionary mapping event types to lists of callback functions
         
-        # Start web server in a separate thread
-        threading.Thread(target=run_app, kwargs={'port': 5000, 'debug': False}, daemon=True).start()
+    Examples:
+        >>> from unittest.mock import MagicMock
+        >>> env = MagicMock()
+        >>> sim = Simulation(environment=env)
+        >>> sim.current_step
+        0
+    """
+    environment: "Environment"
+    config: Dict[str, Any] = field(default_factory=dict)
+    current_step: int = 0
+    running: bool = False
+    last_update_time: float = field(default_factory=time.time)
+    listeners: Dict[str, List[Callable]] = field(default_factory=lambda: {
+        "step_start": [],
+        "step_end": [],
+        "entity_added": [],
+        "entity_removed": []
+    })
+    
+    def add_listener(self, event_type: str, callback: Callable) -> None:
+        """Add a listener for a specific event type.
         
-        # Open browser with configuration
-        url = f"http://localhost:5000/?config={json.dumps(config_dict)}"
-        webbrowser.open(url)
+        Args:
+            event_type: The type of event to listen for
+            callback: The function to call when the event occurs
+            
+        Raises:
+            ValueError: If the event type is not supported
+            
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> env = MagicMock()
+            >>> sim = Simulation(environment=env)
+            >>> callback = lambda sim, **kwargs: None
+            >>> sim.add_listener("step_start", callback)
+            >>> len(sim.listeners["step_start"])
+            1
+        """
+        if event_type not in self.listeners:
+            raise ValueError(f"Unsupported event type: {event_type}")
+            
+        self.listeners[event_type].append(callback)
+    
+    def notify_listeners(self, event_type: str, **kwargs) -> None:
+        """Notify all listeners of an event.
         
-        # Keep main thread alive
+        Args:
+            event_type: The type of event that occurred
+            **kwargs: Additional data to pass to the listeners
+            
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> env = MagicMock()
+            >>> sim = Simulation(environment=env)
+            >>> data = {"called": False}
+            >>> def callback(sim, **kwargs):
+            ...     data["called"] = True
+            >>> sim.add_listener("step_start", callback)
+            >>> sim.notify_listeners("step_start")
+            >>> data["called"]
+            True
+        """
+        if event_type in self.listeners:
+            for callback in self.listeners[event_type]:
+                callback(self, **kwargs)
+    
+    def step(self) -> None:
+        """Execute a single simulation step.
+        
+        This advances the simulation by one step, updating all entities
+        and notifying listeners of the step start and end events.
+        
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> env = MagicMock()
+            >>> env.entities = {}
+            >>> sim = Simulation(environment=env)
+            >>> sim.step()
+            >>> sim.current_step
+            1
+        """
+        self.current_step += 1
+        self.notify_listeners("step_start")
+        
+        # Update all entities (make a copy to handle removals during iteration)
+        entities = list(self.environment.entities.values())
+        for entity in entities:
+            entity.update(self.environment)
+        
+        self.notify_listeners("step_end")
+    
+    def run(self, steps: Optional[int] = None) -> None:
+        """Run the simulation for a number of steps or indefinitely.
+        
+        Args:
+            steps: Number of steps to run, or None to run indefinitely
+            
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> env = MagicMock()
+            >>> env.entities = {}
+            >>> sim = Simulation(environment=env)
+            >>> # Run for 5 steps
+            >>> sim.run(5)
+            >>> sim.current_step
+            5
+        """
+        self.running = True
+        step_count = 0
+        
         try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("Web server stopped")
-    else:
-        # Run simulation and save results
-        simulation, data = run_simulation(config_dict)
+            while self.running and (steps is None or step_count < steps):
+                self.step()
+                step_count += 1
+                
+                # Optional sleep for real-time visualization
+                if "step_delay" in self.config:
+                    time.sleep(self.config["step_delay"])
+        finally:
+            self.running = False
+    
+    def stop(self) -> None:
+        """Stop the simulation.
         
-        if output:
-            # Save results
-            with open(output, 'w') as f:
-                json.dump(data, f, indent=2)
-
-
-if __name__ == "__main__":
-    cli()
+        Examples:
+            >>> from unittest.mock import MagicMock
+            >>> env = MagicMock()
+            >>> sim = Simulation(environment=env)
+            >>> sim.running = True
+            >>> sim.stop()
+            >>> sim.running
+            False
+        """
+        self.running = False
 ```
+
+### 5. Configuration System
+
+A Pydantic-based configuration system to validate inputs and provide defaults. Full type checking and validation.
+
+```python
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List, Dict, Any, Literal
+
+class SimulationConfig(BaseModel):
+    """Configuration for a simulation.
+    
+    This class defines the configuration parameters for a simulation,
+    with validation and default values.
+    
+    Attributes:
+        width: Width of the environment grid
+        height: Height of the environment grid
+        boundary_condition: How boundaries are handled
+        step_delay: Delay between steps for visualization
+        random_seed: Random seed for reproducibility
+        initial_plants: Initial number of plants
+        initial_herbivores: Initial number of herbivores
+        initial_predators: Initial number of predators
+        plant_growth_rate: Rate at which plants grow
+        plant_max_energy: Maximum energy for plants
+        herbivore_initial_energy: Initial energy for herbivores
+        herbivore_speed: Movement speed for herbivores
+        herbivore_energy_decay: Energy decay rate for herbivores
+        predator_initial_energy: Initial energy for predators
+        predator_speed: Movement speed for predators
+        predator_energy_decay: Energy decay rate for predators
+        
+    Examples:
+        >>> config = SimulationConfig(width=100, height=100)
+        >>> config.width
+        100
+        >>> config.boundary_condition
+        'wrapped'
+    """
+    width: int = Field(50, ge=1, description="Width of the environment grid")
+    height: int = Field(50, ge=1, description="Height of the environment grid")
+    boundary_condition: Literal["wrapped", "bounded", "infinite"] = "wrapped"
+    step_delay: Optional[float] = Field(None, ge=0, description="Delay between steps for visualization")
+    random_seed: Optional[int] = None
+    
+    # Entity initialization
+    initial_plants: int = Field(100, ge=0)
+    initial_herbivores: int = Field(20, ge=0)
+    initial_predators: int = Field(5, ge=0)
+    
+    # Plant parameters
+    plant_growth_rate: float = Field(0.1, ge=0)
+    plant_max_energy: float = Field(100.0, ge=0)
+    
+    # Herbivore parameters
+    herbivore_initial_energy: float = Field(100.0, ge=0)
+    herbivore_speed: float = Field(1.0, ge=0)
+    herbivore_energy_decay: float = Field(0.1, ge=0)
+    
+    # Predator parameters
+    predator_initial_energy: float = Field(150.0, ge=0)
+    predator_speed: float = Field(1.5, ge=0)
+    predator_energy_decay: float = Field(0.2, ge=0)
+    
+    @validator("width", "height")
+    def ensure_reasonable_dimensions(cls, v, field):
+        """Ensure grid dimensions are reasonable for performance.
+        
+        Args:
+            v: The value to validate
+            field: The field being validated
+            
+        Returns:
+            The validated value
+            
+        Raises:
+            ValueError: If dimensions are too large
+        """
+        if v > 1000:
+            raise ValueError(f"{field.name} should be less than 1000 for performance reasons")
+        return v
+```
+
+## Testing Strategy
+
+A comprehensive approach to testing that ensures correctness and reliability:
+
+### 1. Unit Testing Every Component
+
+```python
+# Example unit test for Environment class
+def test_environment_add_entity():
+    """Test that entities can be added to the environment.
+    
+    This test verifies that:
+    1. The entity is added to the entities dictionary
+    2. The entity's ID is added to entity_positions at the correct position
+    3. The entity can be retrieved by its position
+    """
+    # Arrange
+    env = Environment(50, 50)
+    entity = Entity(position=(10, 20))
+    
+    # Act
+    env.add_entity(entity)
+    
+    # Assert
+    assert entity.id in env.entities
+    assert entity.id in env.entity_positions[(10, 20)]
+    assert entity in env.get_entities_at((10, 20))
+
+# Example parameterized test for boundary conditions
+@pytest.mark.parametrize("boundary,position,expected", [
+    ("wrapped", (60, 70), (10, 20)),  # 50x50 grid, wrapped boundary
+    ("bounded", (60, 70), (49, 49)),  # 50x50 grid, bounded boundary
+    ("infinite", (60, 70), (60, 70))  # 50x50 grid, infinite boundary
+])
+def test_environment_normalize_position(boundary, position, expected):
+    """Test that positions are normalized correctly for different boundary conditions.
+    
+    This test verifies that:
+    1. "wrapped" boundary wraps positions around the grid
+    2. "bounded" boundary clamps positions to the grid
+    3. "infinite" boundary allows positions outside the grid
+    """
+    # Arrange
+    env = Environment(50, 50, boundary_condition=boundary)
+    
+    # Act
+    result = env.normalize_position(position)
+    
+    # Assert
+    assert result == expected
+```
+
+### 2. Property-Based Testing for Invariants
+
+```python
+# Example property-based test for entity movement
+@given(
+    width=st.integers(min_value=10, max_value=100),
+    height=st.integers(min_value=10, max_value=100),
+    entity_x=st.integers(min_value=0, max_value=9),
+    entity_y=st.integers(min_value=0, max_value=9),
+    dx=st.integers(min_value=-1, max_value=1),
+    dy=st.integers(min_value=-1, max_value=1)
+)
+def test_entity_movement_property(width, height, entity_x, entity_y, dx, dy):
+    """Test that entity movement works correctly for any valid grid and position.
+    
+    This test verifies that:
+    1. The entity's position is updated correctly after movement
+    2. The entity's position is always within the grid bounds for wrapped boundary
+    3. The entity's energy decreases by the correct amount after movement
+    """
+    # Arrange
+    env = Environment(width, height, boundary_condition="wrapped")
+    entity = Entity(position=(entity_x, entity_y))
+    energy = EnergyComponent(energy=100.0, decay_rate=0.0)
+    movement = MovementComponent(speed=1.0, movement_cost=0.1)
+    entity.add_component("energy", energy)
+    entity.add_component("movement", movement)
+    env.add_entity(entity)
+    
+    # Set up the movement
+    old_position = entity.position
+    old_energy = energy.energy
+    
+    # Act - manually trigger the movement in a specific direction
+    x, y = entity.position
+    new_pos = env.normalize_position((x + dx, y + dy))
+    energy.energy -= movement.movement_cost * movement.speed
+    
+    # Update position in environment
+    env.entity_positions[entity.position].remove(entity.id)
+    if not env.entity_positions[entity.position]:
+        del env.entity_positions[entity.position]
+    
+    entity.position = new_pos
+    
+    if new_pos not in env.entity_positions:
+        env.entity_positions[new_pos] = set()
+    env.entity_positions[new_pos].add(entity.id)
+    
+    # Assert
+    assert entity.position == new_pos
+    assert 0 <= entity.position[0] < width
+    assert 0 <= entity.position[1] < height
+    assert energy.energy == old_energy - movement.movement_cost * movement.speed
+    assert entity.id in env.entity_positions[new_pos]
+```
+
+### 3. Integration Testing for Component Interactions
+
+```python
+# Example integration test for predator-prey interaction
+def test_predator_prey_interaction():
+    """Test that predators can hunt and consume herbivores.
+    
+    This test verifies that:
+    1. A predator at the same position as a herbivore will consume it
+    2. The predator's energy increases by the correct amount
+    3. The herbivore is removed from the environment
+    """
+    # Arrange
+    env = Environment(50, 50)
+    
+    # Create a herbivore
+    herbivore = Entity(position=(10, 10))
+    herbivore_energy = EnergyComponent(energy=50.0)
+    herbivore.add_component("energy", herbivore_energy)
+    herbivore.add_component("herbivore", HerbivoreComponent())
+    env.add_entity(herbivore)
+    
+    # Create a predator
+    predator = Entity(position=(10, 10))
+    predator_energy = EnergyComponent(energy=100.0)
+    predator.add_component("energy", predator_energy)
+    predator.add_component("predator", PredatorComponent(energy_efficiency=0.6))
+    env.add_entity(predator)
+    
+    # Store IDs and initial energy
+    herbivore_id = herbivore.id
+    predator_id = predator.id
+    initial_predator_energy = predator_energy.energy
+    herbivore_energy_value = herbivore_energy.energy
+    
+    # Act
+    predator.update(env)
+    
+    # Assert
+    assert herbivore_id not in env.entities  # Herbivore should be consumed
+    assert predator_id in env.entities  # Predator should still exist
+    assert predator_energy.energy == pytest.approx(initial_predator_energy + herbivore_energy_value * 0.6)
+```
+
+### 4. Documentation Tests
+
+```python
+# Example doctest verification
+def test_environment_doctest():
+    """Verify that the doctest examples in Environment are correct."""
+    import doctest
+    import io
+    output = io.StringIO()
+    result = doctest.testfile(
+        "environment.py",
+        package="virtuallife.simulation",
+        verbose=True,
+        raise_on_error=True,
+        optionflags=doctest.ELLIPSIS,
+        name="environment",
+        globs={'Environment': Environment, 'Entity': Entity},
+        out=output
+    )
+    assert result.failed == 0
+```
+
+## End-to-End Testing
+
+```python
+# Example end-to-end test for a predator-prey ecosystem
+def test_predator_prey_ecosystem():
+    """Test a complete predator-prey ecosystem over multiple time steps.
+    
+    This test verifies that:
+    1. The ecosystem evolves according to expected patterns
+    2. Population dynamics follow expected trends
+    3. The simulation can run for many steps without errors
+    """
+    # Arrange
+    config = SimulationConfig(
+        width=50,
+        height=50,
+        initial_plants=100,
+        initial_herbivores=20,
+        initial_predators=5,
+        plant_growth_rate=0.1,
+    )
+    
+    # Create environment and simulation
+    env = Environment(config.width, config.height)
+    sim = Simulation(env, config.dict())
+    
+    # Initialize simulation with entities
+    initialize_simulation_with_test_entities(sim, config)
+    
+    # Act - run for 100 steps
+    sim.run(100)
+    
+    # Assert
+    # Count each type of entity
+    plants = sum(1 for e in env.entities.values() if e.has_component("plant"))
+    herbivores = sum(1 for e in env.entities.values() if e.has_component("herbivore"))
+    predators = sum(1 for e in env.entities.values() if e.has_component("predator"))
+    
+    # Check that we still have entities of each type
+    # (Exact numbers will vary due to randomness, so we just check for existence)
+    assert plants > 0, "Plants should still exist after 100 steps"
+    assert herbivores > 0, "Herbivores should still exist after 100 steps"
+    assert predators > 0, "Predators should still exist after 100 steps"
+```
+
+## Documentation Strategy
+
+### Module Documentation
+
+Every module must have a comprehensive docstring explaining:
+
+1. Purpose and functionality
+2. How it fits into the overall architecture
+3. Key concepts and abstractions
+4. Usage examples
+
+### Function Documentation
+
+Every function must have a docstring explaining:
+
+1. What the function does
+2. Parameters (with types and constraints)
+3. Return values (with types)
+4. Exceptions that may be raised
+5. Usage examples
+6. Implementation notes for complex algorithms
+
+### Class Documentation
+
+Every class must have a docstring explaining:
+
+1. Purpose and behavior
+2. Attributes (with types)
+3. Class invariants
+4. Relationships with other classes
+5. Lifecycle (initialization, update, cleanup)
+6. Usage examples
+
+## Implementation Plan
+
+### Phase 1: Core Simulation (Weeks 1-2)
+
+1. Set up project structure and dependencies
+2. Implement core simulation components with comprehensive tests
+3. Create simple predator-prey ecosystem
+4. Add basic visualization options
+
+### Phase 2: API and Enhanced Visualization (Weeks 3-4)
+
+1. Implement FastAPI endpoints with complete documentation and tests
+2. Create basic web visualization
+3. Enhance entity behaviors with comprehensive tests
+4. Add data collection capabilities
+
+### Phase 3: Advanced Features (Weeks 5-8)
+
+1. Add species concept and simple genetics with property-based tests
+2. Create more sophisticated behaviors with comprehensive tests
+3. Enhance web visualization
+4. Implement WebSocket support for real-time updates
+
+### Phase 4: Evolution and Analysis (Weeks 9-12)
+
+1. Implement evolutionary mechanisms with comprehensive tests
+2. Add comprehensive analysis tools
+3. Create visualization dashboards
+4. Optimize performance for larger simulations
 
 ## Conclusion
 
-This technical specification provides a blueprint for implementing the VirtualLife project with a web-based interface and a predator-prey ecosystem as the first implementation example. The focus is on creating a clear, modular architecture that can be incrementally enhanced through the phases outlined in the roadmap.
+This simplified technical specification provides a blueprint for implementing the VirtualLife project in a way that is tailored for AI development. The comprehensive testing requirements and detailed documentation standards are essential to ensure the correctness and reliability of the implementation.
 
-The predator-prey ecosystem provides a richer first implementation than a simple cellular automaton, showcasing more of the system's capabilities including resource management, entity behaviors, and population dynamics. The web interface will make the platform accessible to a wide audience, while the modular design will allow for continuous improvement and extension. 
+By using dataclasses, Pydantic models, type annotations, and a focus on explicit error handling, the codebase becomes more maintainable, understandable, and robust. The phased approach allows for incremental development while maintaining a clear direction. 

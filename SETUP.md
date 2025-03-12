@@ -1,6 +1,6 @@
-# VirtualLife Project Setup
+# VirtualLife Project Setup (Simplified)
 
-This document provides instructions for setting up the development environment for the VirtualLife project and outlines the project's dependencies and requirements.
+This document provides instructions for setting up the development environment for the VirtualLife project and outlines the project's dependencies and requirements. This project is designed to be implemented by an AI agent, which necessitates strict adherence to testing and documentation standards.
 
 ## Development Environment Setup
 
@@ -9,7 +9,6 @@ This document provides instructions for setting up the development environment f
 - Python 3.10 or higher
 - Git
 - Poetry (dependency management)
-- Node.js and npm (for frontend development, optional)
 
 ### Setup Steps
 
@@ -30,7 +29,17 @@ If you don't have Poetry installed, follow the instructions on the [official Poe
 poetry install
 ```
 
-This will create a virtual environment and install all the required dependencies.
+This will create a virtual environment and install the core dependencies.
+
+For optional dependency groups (available in Phase 2+):
+
+```bash
+# Web interface dependencies
+poetry install --with web
+
+# Data analysis dependencies
+poetry install --with data
+```
 
 4. **Activate the virtual environment**
 
@@ -44,244 +53,294 @@ poetry shell
 pre-commit install
 ```
 
-6. **Install frontend dependencies (optional)**
+## Simplified Project Structure
 
-If you want to customize the web interface beyond the provided templates:
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-## Project Structure
-
-The project structure follows a strict modular design with small, focused files:
+The project has been streamlined for easier development while maintaining a clear path to advanced features:
 
 ```
 virtual-life-ai/
-├── docs/                  # Documentation
-├── tests/                 # Test suite
-│   ├── unit/              # Unit tests (70% of tests)
-│   │   ├── core/          # Tests for core modules
-│   │   ├── components/    # Tests for components
-│   │   ├── behaviors/     # Tests for behaviors
-│   │   ├── web/           # Tests for web components
-│   │   └── utils/         # Tests for utilities
-│   ├── integration/       # Integration tests (20% of tests)
-│   ├── functional/        # Functional tests (10% of tests)
+├── tests/                  # Comprehensive test suite
+│   ├── unit/              # Unit tests for all components
+│   ├── integration/       # Integration tests for component interactions
+│   ├── functional/        # Functional tests for features
 │   └── conftest.py        # Shared test fixtures
 ├── virtuallife/           # Main package
 │   ├── __init__.py
-│   ├── core/              # Core simulation components
+│   ├── simulation/        # Core simulation engine
 │   │   ├── __init__.py
-│   │   ├── interfaces/    # Protocol definitions
-│   │   │   ├── __init__.py
-│   │   │   ├── entity.py
-│   │   │   └── environment.py
 │   │   ├── environment.py # Environment implementation
 │   │   ├── entity.py      # Entity implementation
-│   │   ├── species.py     # Species implementation
-│   │   └── simulation.py  # Simulation engine
-│   ├── components/        # Entity component implementations
+│   │   ├── component.py   # Components for entities
+│   │   └── runner.py      # Simulation runner
+│   ├── models/            # Data models using Pydantic
 │   │   ├── __init__.py
-│   │   ├── registry.py
-│   │   ├── base.py
-│   │   ├── energy.py
-│   │   └── movement.py
-│   ├── behaviors/         # Entity behavior implementations
+│   │   ├── config.py      # Configuration schemas
+│   │   ├── entity.py      # Entity schemas
+│   │   └── state.py       # Simulation state models
+│   ├── visualize/         # Visualization tools
 │   │   ├── __init__.py
-│   │   ├── random_movement.py
-│   │   └── reproduction.py
-│   ├── web/               # Web interface components
+│   │   ├── console.py     # Console visualization
+│   │   ├── plotting.py    # Matplotlib visualization
+│   │   └── web/           # Web visualization (Phase 2+)
+│   ├── api/               # API layer (Phase 2+)
 │   │   ├── __init__.py
-│   │   ├── static/        # Static assets (CSS, JS)
-│   │   │   ├── css/       # Stylesheets
-│   │   │   ├── js/        # JavaScript files
-│   │   │   └── img/       # Images
-│   │   ├── templates/     # HTML templates
-│   │   ├── routes.py      # Web routes
-│   │   ├── socket.py      # WebSocket handlers
-│   │   └── app.py         # Flask application
-│   ├── visualization/     # Visualization components
-│   │   ├── __init__.py
-│   │   ├── renderer.py    # Base renderer
-│   │   └── web_renderer.py # Web-specific rendering
-│   ├── utils/             # Utility functions and helpers
-│   │   ├── __init__.py
-│   │   ├── spatial.py
-│   │   └── config.py      # Configuration utilities
-│   └── cli.py             # Command-line interface
-├── examples/              # Example simulations
-│   ├── predator_prey.yaml # Predator-prey simulation (default)
-│   └── advanced_ecosystem.yaml # More complex ecosystem
-├── .github/               # GitHub actions and workflows
-├── .gitignore
+│   │   └── routes.py      # API endpoints
+│   ├── cli.py             # Command-line interface
+│   └── config/            # Default configurations
+├── docs/                  # Documentation
+│   ├── user/              # User documentation
+│   ├── developer/         # Developer documentation
+│   └── api/               # API documentation
 ├── pyproject.toml         # Project metadata and dependencies
-├── README.md
-├── ROADMAP.md
-└── TECHNICAL_SPECS.md
+├── README.md              # Project overview
+├── ROADMAP.md             # Development roadmap
+└── TECHNICAL_SPECS.md     # Technical specifications
 ```
 
-## Code Organization Guidelines
+## Development Standards for AI Implementation
 
-### File Size Limits
+### Documentation Standards
 
-- **Maximum file size**: 200-300 lines of code (excluding comments and blank lines)
-- **Maximum function/method size**: 50 lines
-- **Maximum class size**: 200 lines
+Documentation is **critical** for AI development and must be comprehensive:
 
-When a file approaches these limits, split it into smaller, focused modules.
+1. **Module Documentation**
+   - Every module must have a docstring explaining its purpose, contents, and usage
+   - Include examples of how the module should be used
 
-### Module Organization
+2. **Function/Method Documentation**
+   - Every function and method must have a comprehensive docstring
+   - Document all parameters with types and descriptions
+   - Document return values with types and descriptions
+   - Document exceptions that may be raised
+   - Include examples of usage
+   - Explain algorithm details for complex functions
 
-1. Each module should have a **single responsibility**
-2. Create **explicit interfaces** between components using Protocol classes
-3. Minimize **dependencies between modules**
-4. Maintain a **strict dependency hierarchy** to prevent circular imports
+3. **Class Documentation**
+   - Document the purpose and behavior of each class
+   - Explain the initialization parameters
+   - Document class attributes
+   - Explain the relationships with other classes
 
-## Dependencies
+4. **Code Comments**
+   - Use comments to explain "why" not just "what"
+   - Comment complex or non-obvious logic
+   - Explain design decisions and tradeoffs
 
-The project uses the following dependencies:
+5. **Configuration Documentation**
+   - Document all configuration options
+   - Provide examples of different configurations
+   - Explain the effects of each configuration option
 
-### Production Dependencies
+### Testing Standards
 
-- **NumPy**: Efficient numerical operations
-- **Flask**: Web framework
-- **Flask-SocketIO**: Real-time communication
-- **PyYAML**: Configuration file handling
-- **Click**: Command-line interface
-- **D3.js**: Data visualization (client-side)
-- **tqdm**: Progress bars for long-running simulations
+Testing is **essential** for AI development and must be thorough:
 
-### Development Dependencies
+1. **Unit Testing**
+   - Every function must have corresponding unit tests
+   - Test both normal operation and edge cases
+   - Test error conditions
+   - Verify input validation
+   - Test boundary conditions
+   - Aim for 90% line coverage minimum
 
-- **pytest**: Testing framework
-- **pytest-cov**: Test coverage
-- **pytest-mock**: Mocking support
-- **hypothesis**: Property-based testing
-- **black**: Code formatting
-- **isort**: Import sorting
-- **flake8**: Linting
-- **mypy**: Static type checking
-- **pre-commit**: Git hooks
+2. **Integration Testing**
+   - Test component interactions
+   - Verify system state consistency
+   - Test event propagation
+   - Test configuration application
 
-## Test-Driven Development Workflow
+3. **Property-Based Testing**
+   - Use property-based testing for algorithms with invariants
+   - Test statistically correct behavior for randomized operations
+   - Verify genetic algorithms with property tests
 
-VirtualLife follows a strict test-first approach:
+4. **Documentation Testing**
+   - Examples in docstrings must be tested
+   - README examples must be verified
+   - Configuration examples must be tested
 
-### 1. Test-First Development Cycle
+### Code Quality Standards
 
-For each new feature or bug fix:
+1. **Type Annotations**
+   - Every function, method, and variable must have type annotations
+   - Use generics where appropriate
+   - Use Literal types for constrained values
+   - Leverage TypedDict and Protocol for clear interfaces
 
-1. **Write test first**: Create a failing test that defines the expected behavior
-2. **Implement minimum code**: Write just enough code to make the test pass
-3. **Refactor**: Clean up the code while keeping tests passing
-4. **Commit**: Commit changes with clear, descriptive messages
+2. **Error Handling**
+   - Validate inputs at function boundaries
+   - Provide clear error messages
+   - Use appropriate exception types
+   - Handle edge cases explicitly
 
-### 2. Running Tests
+3. **Code Style**
+   - Follow Black/isort formatting
+   - Use descriptive variable names
+   - Keep functions focused on a single task
+   - Use appropriate design patterns
 
-Run the full test suite:
+## Phased Development Guidelines
+
+### Phase 1: Core Simulation (Weeks 1-2)
+
+Focus on:
+- Basic environment and entity implementation
+- Simple predator-prey ecosystem
+- CLI interface and matplotlib visualization
+- Core data structures and algorithms
+- **Comprehensive testing of all components**
+- **Thorough documentation of all functions and classes**
+
+Development workflow:
+1. **Document First**: Define interface with detailed docstrings
+2. **Test Second**: Write comprehensive tests before implementation
+3. **Implement Third**: Implement functionality to match docs and pass tests
+4. **Refactor Fourth**: Improve implementation while maintaining tests
+
+### Phase 2: API and Enhanced Visualization (Weeks 3-4)
+
+Focus on:
+- REST API with FastAPI
+- Simple web visualization
+- More sophisticated entity behaviors
+- Data collection for analysis
+- **API documentation with examples**
+- **Tests for all API endpoints**
+
+### Phase 3: Advanced Features (Weeks 5-8)
+
+Focus on:
+- Species concept and simple genetics
+- More complex behaviors
+- Enhanced web visualization
+- WebSocket support for real-time updates
+- **Property-based tests for genetics**
+- **Technical design documentation**
+
+### Phase 4: Evolution and Analysis (Weeks 9-12)
+
+Focus on:
+- Evolutionary mechanisms
+- Advanced data analysis
+- Comprehensive dashboards
+- Performance optimization
+- **End-to-end test scenarios**
+- **User and developer documentation**
+
+## Running Tests
+
+Testing is a critical part of the development process:
 
 ```bash
+# Run all tests
 pytest
-```
 
-Run specific test categories:
-
-```bash
-# Run only unit tests
+# Run unit tests only
 pytest tests/unit/
 
-# Run tests for a specific module
-pytest tests/unit/core/test_environment.py
-
 # Run with coverage report
-pytest --cov=virtuallife --cov-report=term-missing
+pytest --cov=virtuallife
 
-# Run with verbose output
-pytest -v
-```
-
-### 3. Test Coverage Requirements
-
-- **Unit test coverage**: Minimum 90% line coverage
-- **Branch coverage**: Minimum 80% for conditional logic
-- **Integration test coverage**: All module interactions must be tested
-- **Functional test coverage**: All user-facing features must have tests
-
-Check test coverage with:
-
-```bash
+# Run with detailed coverage report
 pytest --cov=virtuallife --cov-report=html
+
+# Run tests on a specific component
+pytest tests/unit/simulation/test_environment.py
+
+# Run tests with verbose output
+pytest -v
+
+# Run tests and output test duration
+pytest --durations=10
 ```
 
-This generates a report in `htmlcov/index.html`.
+### Documentation Testing
 
-## Running the Web Interface
-
-Start the web interface:
+Verify docstring examples:
 
 ```bash
-python -m virtuallife.cli web --port 5000
+# Test docstrings
+pytest --doctest-modules virtuallife
+
+# Check specific module docstrings
+pytest --doctest-modules virtuallife/simulation/environment.py
 ```
 
-This will start the Flask web server on port 5000. You can then access the web interface by navigating to `http://localhost:5000` in your web browser.
+## Documentation Guidelines
 
-## Running the Predator-Prey Simulation
+### Docstring Format (Google Style)
 
-Run the predator-prey simulation with the web interface:
-
-```bash
-python -m virtuallife.cli predator-prey --width 50 --height 50 --plant-growth 0.1 --herbivore-count 20 --predator-count 5 --web
+```python
+def function_name(param1: type1, param2: type2) -> return_type:
+    """Short description of the function.
+    
+    Detailed description of the function's purpose and behavior.
+    Include algorithm details for complex functions.
+    
+    Args:
+        param1: Description of param1
+        param2: Description of param2
+        
+    Returns:
+        Description of return value
+        
+    Raises:
+        ExceptionType: Description of when this exception is raised
+        
+    Examples:
+        >>> function_name(1, 'test')
+        Expected result
+        
+    Notes:
+        Additional details or implementation notes
+    """
+    # Implementation
 ```
 
-This will start the web server and open a browser window with the predator-prey simulation configured with the specified parameters.
+### Module Documentation
 
-## Running a Custom Simulation
+```python
+"""Module name and short description.
 
-Run a custom simulation from a configuration file:
+Detailed description of the module's purpose and contents.
+Describe how the module fits into the overall architecture.
 
-```bash
-python -m virtuallife.cli run --config examples/advanced_ecosystem.yaml --web
+Examples:
+    >>> from virtuallife.simulation import environment
+    >>> env = environment.Environment(50, 50)
+    
+Attributes:
+    MODULE_CONSTANT: Description of any module-level constants
+"""
 ```
 
-This will start the web server and open a browser window with the advanced ecosystem simulation.
+### Test Documentation
+
+```python
+def test_function_name_scenario():
+    """Test that function_name behaves correctly in specific scenario.
+    
+    Detailed description of what is being tested and why.
+    """
+    # Test implementation
+```
 
 ## Code Style
 
-This project follows these style guidelines:
-
-- **Code Formatting**: Black with line length 88
+- **Formatting**: Black with line length 88
 - **Import Sorting**: isort with Black compatibility
-- **Type Annotations**: All functions and methods must include type annotations
-- **Docstrings**: Google-style docstrings for all public APIs
+- **Type Annotations**: Required for public APIs
+- **Docstrings**: Google-style for public functions
 - **Naming Conventions**:
   - Classes: `CamelCase`
   - Functions and variables: `snake_case`
   - Constants: `UPPER_SNAKE_CASE`
-  - Private methods/attributes: `_leading_underscore`
-  - Interface protocols: `EntityInterface`, `EnvironmentInterface`
 
-## Implementation Plan
+## Development Principles for AI Implementation
 
-Follow the phased approach outlined in the [ROADMAP.md](ROADMAP.md):
-
-1. Start with the core simulation framework and web interface
-2. Implement predator-prey ecosystem as a proof of concept
-3. Add resources and enhanced entity behaviors
-4. Implement species concept and simple genetics
-5. Add advanced ecology and analysis tools
-
-### Implementation Principles
-
-1. **Test first**: Always write tests before implementation
-2. **Interfaces first**: Define interfaces before implementation
-3. **Keep it simple**: Implement the minimum required functionality
-4. **Small modules**: Split code into small, focused modules
-5. **Complete documentation**: Document all public APIs
-6. **Continuous refactoring**: Refactor code as needed while keeping tests passing
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for information on how to contribute to the project. 
+1. **Document Before Code**: Write detailed documentation before implementation
+2. **Test Before Implementation**: Write comprehensive tests before or alongside code
+3. **Explicit Over Implicit**: Be explicit about types, errors, and behavior
+4. **Edge Cases First**: Identify and handle edge cases explicitly
+5. **Fail Fast**: Validate inputs early and provide clear error messages
+6. **Example-Driven Development**: Include examples in documentation that act as tests 

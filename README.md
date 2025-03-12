@@ -10,73 +10,90 @@ VirtualLife aims to create a flexible framework capable of simulating scenarios 
 
 - Grid-based environment with customizable rules
 - Component-based entity system for flexible behavior composition
-- Protocol-defined interfaces for clean module boundaries
-- Species concept with trait inheritance and evolution
 - Resource system with generation and consumption mechanics
-- Data collection and analysis tools for emergent behaviors
-- **Web-based visualization and control interface**
-- Comprehensive test suite with minimum 90% coverage
+- Data collection and analysis tools
+- Progressive visualization options (CLI → matplotlib → web)
+- **Comprehensive test suite with exhaustive coverage**
 
 ## Development Principles
 
 VirtualLife follows these core principles:
 
-- **Test-First Development**: Every feature is built using TDD
-- **Small, Focused Modules**: Each file has a single responsibility and is kept under 300 lines
-- **Interface Contracts**: Explicit interfaces define module boundaries
-- **Strict Dependency Hierarchy**: Prevents circular dependencies
-- **Continuous Testing**: Automated tests run on every change
-- **Comprehensive Documentation**: All code is well-documented
+- **Incremental Development**: Start simple, add complexity progressively
+- **Domain-Driven Design**: Organize by simulation concepts rather than technical layers
+- **Composition Over Inheritance**: Use a flat component system with minimal inheritance
+- **Type Safety**: Leverage Python's type system for documentation and validation
+- **Exhaustive Testing**: Every component must have comprehensive test coverage
+- **Detailed Documentation**: Each function, class, and module must be thoroughly documented
 
-## Architecture
+## AI Development Requirements
+
+Since this project will be implemented by an AI agent, the following additional requirements apply:
+
+- **Test-First Approach**: Tests must be written before or alongside implementation
+- **Edge Case Coverage**: All edge cases must be explicitly identified, handled, and tested
+- **Complete Type Annotations**: All functions, methods, and variables must have type annotations
+- **Comprehensive Docstrings**: Documentation must explain not just what code does, but why and how
+- **Fail-Fast Design**: Functions should validate inputs early and fail with clear error messages
+- **Example-Driven Development**: Examples of usage should be included in docstrings
+
+## Simplified Architecture
 
 VirtualLife is built with a modular, component-based architecture:
 
 ```
 virtuallife/
-├── core/                  # Core simulation components
-│   ├── interfaces/        # Protocol definitions
-│   │   ├── entity.py      # Entity interface
-│   │   └── environment.py # Environment interface
-│   ├── environment/       # Environment implementation
-│   ├── entity.py          # Entity implementation
-│   ├── species.py         # Species definitions
-│   └── simulation.py      # Simulation engine
-├── components/            # Entity component implementations
-├── behaviors/             # Entity behavior implementations
-├── web/                   # Web interface components
-│   ├── static/            # Static assets (CSS, JS)
-│   ├── templates/         # HTML templates
-│   ├── routes.py          # Web routes
-│   └── socket.py          # WebSocket handlers
-├── visualization/         # Visualization components
-│   ├── renderer.py        # Base renderer
-│   └── web_renderer.py    # Web-specific rendering
-└── cli.py                 # Command-line interface
+├── simulation/             # Core simulation engine
+│   ├── environment.py      # Environment implementation
+│   ├── entity.py           # Entity implementation
+│   ├── component.py        # Components for entities
+│   └── runner.py           # Simulation runner
+├── models/                 # Data models using Pydantic
+│   ├── config.py           # Configuration schemas
+│   ├── entity.py           # Entity schemas
+│   └── state.py            # Simulation state models
+├── visualize/              # Visualization tools (progressive complexity)
+│   ├── console.py          # Console output (Phase 1)
+│   ├── plotting.py         # Matplotlib visualization (Phase 1)
+│   └── web/                # Web visualization (Phase 2+)
+├── api/                    # API layer (Phase 2+)
+├── cli.py                  # Command-line interface
+└── config/                 # Default configurations
 ```
 
 ## Implementation Phases
 
-1. **Core Simulation Framework**: Environment, entities, simulation engine, and simple predator-prey ecosystem
-2. **Web Interface**: Basic web visualization and control interface
-3. **Resources and Behaviors**: Resource generation/consumption, entity behaviors
-4. **Species and Genetics**: Species templates, trait inheritance, simple evolution
-5. **Advanced Ecology**: Environmental factors, complex entity interactions, analysis tools
+### Phase 1: Core Simulation Engine (Weeks 1-2)
+- Basic environment and entity system
+- Simple predator-prey mechanics
+- CLI interface and matplotlib visualization
+- Core algorithms and data structures
+- **Comprehensive unit tests for all components**
+- **Detailed documentation with examples**
 
-## Testing Approach
+### Phase 2: API and Enhanced Visualization (Weeks 3-4)
+- REST API with FastAPI
+- Simple web visualization
+- More entity behaviors
+- Data collection and basic analysis
+- **Integration tests for API endpoints**
+- **API documentation with usage examples**
 
-VirtualLife uses a comprehensive testing approach:
+### Phase 3: Advanced Features (Weeks 5-8)
+- Species and simple genetics
+- More complex behaviors
+- Enhanced web visualization
+- Real-time updates with WebSockets
+- **Property-based tests for genetic algorithms**
+- **Technical design documentation**
 
-- **Unit Tests**: Each module is thoroughly tested in isolation
-- **Integration Tests**: Component interactions are verified
-- **Functional Tests**: End-to-end tests for complete scenarios
-- **Property-Based Tests**: Verify complex behaviors across many inputs
-
-Test coverage requirements:
-- Minimum 90% line coverage
-- Minimum 80% branch coverage
-- All module interactions tested
-- All user-facing features tested
+### Phase 4: Evolution and Analysis (Weeks 9-12)
+- Evolutionary mechanisms
+- Advanced data analysis
+- Comprehensive visualization dashboards
+- Performance optimization
+- **End-to-end test scenarios**
+- **User and developer documentation**
 
 ## Quick Start
 
@@ -84,28 +101,23 @@ Test coverage requirements:
 
 ## Examples
 
-### Running the Web Interface
+### Running Basic Simulation with CLI Visualization
 
 ```bash
-# Start the web server
-virtuallife web --port 5000
+# Run predator-prey with console output
+virtuallife run predator-prey --console
+
+# Run with matplotlib visualization
+virtuallife run predator-prey --plot
 ```
 
-### Running Predator-Prey Simulation
+### Running with Web Interface (Phase 2+)
 
 ```bash
-# Run predator-prey with default settings
-virtuallife predator-prey --width 50 --height 50 --web
+# Start the API server
+virtuallife serve
 
-# Run with custom parameters
-virtuallife predator-prey --width 100 --height 100 --plant-growth 0.2 --herbivore-count 50 --predator-count 10 --web
-```
-
-### Custom Simulation
-
-```bash
-# Run a custom simulation from a configuration file
-virtuallife run --config examples/advanced_ecosystem.yaml --output results.json --web
+# In another terminal or browser, connect to http://localhost:8000
 ```
 
 ## Development Status

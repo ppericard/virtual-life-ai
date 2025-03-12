@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "virtuallife"
 version = "0.1.0"
-description = "A flexible artificial life simulator"
+description = "A flexible artificial life simulator with web interface"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -19,14 +19,21 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.24.0"
-scipy = "^1.10.0"
-pandas = "^2.0.0"
-matplotlib = "^3.7.0"
-pygame = "^2.4.0"
-click = "^8.1.0"
 pyyaml = "^6.0.0"
+matplotlib = "^3.7.0"  # For simple visualization
+fastapi = "^0.104.0"  # Simpler API with better typing support
+uvicorn = "^0.23.2"  # ASGI server for FastAPI
+pydantic = "^2.4.2"  # Data validation
+typer = "^0.9.0"  # CLI interface, from same creators as FastAPI
+
+# Optional dependencies for later phases
+[tool.poetry.group.web.dependencies]
+jinja2 = "^3.1.2"
+websockets = "^11.0.3"
+
+[tool.poetry.group.data.dependencies]
+pandas = "^2.0.0"
 h5py = "^3.8.0"
-tqdm = "^4.65.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"
@@ -36,11 +43,9 @@ isort = "^5.12.0"
 flake8 = "^6.0.0"
 mypy = "^1.3.0"
 pre-commit = "^3.3.2"
-sphinx = "^7.0.0"
-sphinx-rtd-theme = "^1.2.0"
 
 [tool.poetry.scripts]
-virtuallife = "virtuallife.cli:main"
+virtuallife = "virtuallife.cli:app"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
