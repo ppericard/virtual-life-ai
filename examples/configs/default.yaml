@@ -42,4 +42,5 @@ resources:
 
 # Optional parameters
 random_seed: null  # Set to an integer for reproducible simulations
-max_steps: null    # Set to an integer to limit simulation duration 
+max_steps: null    # Set to an integer to limit simulation duration
+step_delay: 0.5    # Delay between simulation steps in seconds 

@@ -175,4 +175,8 @@ class SimulationConfig(BaseModel):
     max_steps: Optional[int] = Field(
         default=None,
         description="Maximum number of simulation steps (None for infinite)"
+    )
+    step_delay: Optional[float] = Field(
+        default=None,
+        description="Delay between simulation steps in seconds"
     ) 

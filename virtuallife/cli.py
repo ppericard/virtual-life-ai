@@ -41,7 +41,7 @@ def run_simulation(
     config_path: Optional[Path] = typer.Option(
         None,
         "--config", "-c",
-        help="Path to the configuration file (YAML)",
+        help="Path to the configuration file (YAML). If not provided, uses examples/configs/default.yaml",
         exists=False,
         file_okay=True,
         dir_okay=False,
@@ -82,10 +82,12 @@ def run_simulation(
         config = load_or_default(config_path)
         
         # Override config with command-line options
-        if step_delay is not None:
+        if steps is not None:
             config.max_steps = steps
         if random_seed is not None:
             config.random_seed = random_seed
+        if step_delay is not None:
+            config.step_delay = step_delay
         
         # Set up visualizer type
         vis_type = "none" if no_visualization else visualizer.lower()
@@ -96,10 +98,6 @@ def run_simulation(
             
         # Set up the simulation
         runner, vis = setup_simulation(config, vis_type)
-        
-        # Add step delay if specified
-        if step_delay is not None:
-            runner.config["step_delay"] = step_delay
         
         # Log simulation start
         logger.info(f"Starting simulation with {config.environment.width}x{config.environment.height} environment")
@@ -147,6 +145,7 @@ def show_info(
         console.print(f"Initial entities: {config.environment.initial_entities}")
         console.print(f"Random seed: {config.random_seed}")
         console.print(f"Max steps: {config.max_steps}")
+        console.print(f"Step delay: {config.step_delay} seconds")
         
         console.print("\n[bold green]Component Configurations:[/bold green]")
         console.print("[bold]Energy:[/bold]")

@@ -73,9 +73,14 @@ def get_default_config() -> SimulationConfig:
     """Get a default configuration instance.
     
     Returns:
-        Default configuration with all parameters set to their default values
+        Default configuration loaded from examples/configs/default.yaml,
+        or a new instance with default values if the file is not found.
     """
-    return SimulationConfig()
+    default_path = Path(__file__).parent.parent.parent / "examples" / "configs" / "default.yaml"
+    try:
+        return load_config(default_path)
+    except (FileNotFoundError, ValidationError):
+        return SimulationConfig()
 
 
 def load_or_default(config_path: Optional[Union[str, Path]] = None) -> SimulationConfig:
