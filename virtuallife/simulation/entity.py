@@ -5,8 +5,11 @@ foundation of the entity-component system used in the simulation.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Protocol, TypeVar, cast, Optional, Type
+from typing import Dict, Protocol, TypeVar, cast, Optional, Type, TYPE_CHECKING
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from virtuallife.simulation.environment import Environment
 
 
 class Component(Protocol):
