@@ -8,6 +8,7 @@ and defines the boundaries of the simulation space.
 from dataclasses import dataclass, field
 from typing import Dict, Set, Tuple, List, Optional
 from uuid import UUID
+from collections import defaultdict
 
 
 @dataclass
@@ -36,6 +37,21 @@ class Environment:
     resources: Dict[str, Dict[Tuple[int, int], float]] = field(
         default_factory=lambda: {}
     )
+
+    def __init__(self, width: int, height: int, boundary_condition: str = "wrapped") -> None:
+        """Initialize the environment.
+
+        Args:
+            width: Width of the environment grid
+            height: Height of the environment grid
+            boundary_condition: How to handle entities at boundaries ('wrapped' or 'bounded')
+        """
+        self.width = width
+        self.height = height
+        self.boundary_condition = boundary_condition
+        self.entities: Dict[UUID, "Entity"] = {}
+        self.entity_positions: Dict[Tuple[int, int], Set[UUID]] = defaultdict(set)
+        self.resources: Dict[str, Dict[Tuple[int, int], float]] = defaultdict(lambda: defaultdict(float))
 
     def add_entity(self, entity: "Entity") -> None:
         """Add an entity to the environment.
@@ -171,4 +187,32 @@ class Environment:
         if resource_type in self.resources and position in self.resources[resource_type]:
             del self.resources[resource_type][position]
             if not self.resources[resource_type]:
-                del self.resources[resource_type] 
+                del self.resources[resource_type]
+
+    def move_entity(self, entity: "Entity", new_position: Tuple[int, int]) -> None:
+        """Move an entity to a new position, handling boundary conditions.
+
+        Args:
+            entity: The entity to move
+            new_position: The target position (x, y)
+        """
+        x, y = new_position
+        if self.boundary_condition == "wrapped":
+            # Wrap around boundaries
+            x = x % self.width
+            y = y % self.height
+        else:  # bounded
+            # Keep within boundaries
+            x = max(0, min(self.width - 1, x))
+            y = max(0, min(self.height - 1, y))
+
+        # Update position tracking
+        old_position = entity.position
+        if entity.id in self.entities:
+            self.entity_positions[old_position].remove(entity.id)
+            if not self.entity_positions[old_position]:
+                del self.entity_positions[old_position]
+
+        # Update entity position
+        entity.position = (x, y)
+        self.entity_positions[(x, y)].add(entity.id) 

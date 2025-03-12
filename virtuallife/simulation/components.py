@@ -4,45 +4,58 @@ This module provides the standard components that can be added to entities
 to provide common behaviors like energy management and movement.
 """
 
-from dataclasses import dataclass
 import random
-from typing import TYPE_CHECKING, Optional, Dict, Any
-from uuid import uuid4
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+from virtuallife.config.models import (
+    EnergyConfig,
+    MovementConfig,
+    ConsumerConfig,
+    ReproductionConfig,
+)
 
 if TYPE_CHECKING:
     from virtuallife.simulation.entity import Entity
     from virtuallife.simulation.environment import Environment
 
 
-@dataclass
 class EnergyComponent:
-    """Component for managing entity energy.
-    
-    This component handles energy levels, consumption, and death when energy
-    is depleted.
-    
-    Attributes:
-        energy: Current energy level
-        max_energy: Maximum possible energy level
-        decay_rate: Rate at which energy decreases per step
-        death_threshold: Energy level at which the entity dies
-    """
-    energy: float = 100.0
-    max_energy: float = 100.0
-    decay_rate: float = 0.1
-    death_threshold: float = 0.0
-    
+    """Component that manages an entity's energy level."""
+
+    def __init__(
+        self,
+        config: Optional[EnergyConfig] = None,
+        energy: Optional[float] = None,
+    ) -> None:
+        """Initialize the energy component.
+
+        Args:
+            config: Configuration for the energy component
+            energy: Initial energy level. If None, uses config's initial_energy
+        """
+        if config is None:
+            config = EnergyConfig()
+        self.config = config
+        self.energy = energy if energy is not None else config.initial_energy
+        self.max_energy = config.max_energy
+        self.decay_rate = config.decay_rate
+        self.death_threshold = config.death_threshold
+
     def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Update the energy level and handle death if energy is depleted.
-        
+        """Update the entity's energy level.
+
         Args:
             entity: The entity this component belongs to
             environment: The environment the entity exists in
         """
-        self.energy = max(0.0, self.energy - self.decay_rate)
-        if self.energy <= self.death_threshold:
-            environment.remove_entity(entity.id)
-    
+        # Apply energy decay
+        old_energy = self.energy
+        self.energy = max(0.0, old_energy - self.decay_rate)
+
+        # Check for death if energy dropped below threshold or reached zero
+        if (old_energy >= self.death_threshold and self.energy < self.death_threshold) or self.energy == 0.0:
+            environment.remove_entity(entity)
+
     def consume_energy(self, amount: float) -> bool:
         """Consume energy if available.
         
@@ -50,15 +63,15 @@ class EnergyComponent:
             amount: Amount of energy to consume
             
         Returns:
-            True if energy was consumed, False if not enough energy
+            True if energy was consumed, False if insufficient energy
         """
         if self.energy >= amount:
             self.energy = max(0.0, self.energy - amount)
             return True
         return False
-    
+
     def add_energy(self, amount: float) -> None:
-        """Add energy, not exceeding max_energy.
+        """Add energy up to max_energy.
         
         Args:
             amount: Amount of energy to add
@@ -66,142 +79,101 @@ class EnergyComponent:
         self.energy = min(self.max_energy, self.energy + amount)
 
 
-@dataclass
 class MovementComponent:
-    """Component for entity movement.
-    
-    This component allows entities to move around the environment, with
-    optional energy cost for movement.
-    
-    Attributes:
-        speed: Movement speed (positions per step)
-        movement_cost: Energy cost per unit of movement
-    """
-    speed: float = 1.0
-    movement_cost: float = 0.1
-    
+    """Component that handles entity movement."""
+
+    def __init__(self, config: Optional[MovementConfig] = None) -> None:
+        """Initialize the movement component.
+
+        Args:
+            config: Movement configuration parameters
+        """
+        self.config = config or MovementConfig()
+        self.speed = self.config.speed
+        self.movement_cost = self.config.movement_cost
+
     def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Move the entity randomly within its speed limit.
-        
+        """Update entity position with random movement.
+
         Args:
             entity: The entity this component belongs to
             environment: The environment the entity exists in
         """
-        # Check for energy component
-        energy_component = entity.get_component_typed("energy", EnergyComponent)
-        if energy_component is not None and energy_component.energy <= 0:
-            return
-        
-        # Calculate random movement
-        dx = random.randint(-1, 1)
-        dy = random.randint(-1, 1)
-        
-        # Calculate energy cost based on actual movement
-        distance = (abs(dx) + abs(dy)) * self.speed
-        energy_cost = distance * self.movement_cost
-        
-        # Check if we have enough energy
-        if energy_component is not None:
-            if not energy_component.consume_energy(energy_cost):
-                return
-        
-        # Update position
-        x, y = entity.position
-        new_pos = environment.normalize_position((x + dx, y + dy))
-        
-        # Update position in environment
-        if entity.position in environment.entity_positions:
-            environment.entity_positions[entity.position].remove(entity.id)
-            if not environment.entity_positions[entity.position]:
-                del environment.entity_positions[entity.position]
-        
-        entity.position = new_pos
-        
-        if new_pos not in environment.entity_positions:
-            environment.entity_positions[new_pos] = set()
-        environment.entity_positions[new_pos].add(entity.id)
-
-
-@dataclass
-class ResourceConsumerComponent:
-    """Component for consuming resources from the environment.
-    
-    This component allows entities to consume resources and convert them
-    to energy.
-    
-    Attributes:
-        resource_type: Type of resource to consume
-        consumption_rate: Amount of resource consumed per step
-        energy_conversion: Energy gained per unit of resource
-    """
-    resource_type: str = "food"
-    consumption_rate: float = 1.0
-    energy_conversion: float = 0.5
-    
-    def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Consume resources and convert them to energy.
-        
-        Args:
-            entity: The entity this component belongs to
-            environment: The environment the entity exists in
-        """
+        # Get energy component
         energy_component = entity.get_component_typed("energy", EnergyComponent)
         if energy_component is None:
             return
+
+        # Calculate movement cost
+        movement_cost = self.movement_cost * self.speed
         
-        # Get available resource at current position
-        available = environment.get_resource(self.resource_type, entity.position)
-        if available <= 0:
+        # Check if we have enough energy to move
+        if not energy_component.consume_energy(movement_cost):
             return
+
+        # Random movement
+        dx = random.uniform(-self.speed, self.speed)
+        dy = random.uniform(-self.speed, self.speed)
         
-        # Calculate how much we can consume
-        to_consume = min(available, self.consumption_rate)
+        # Update position through environment to handle boundaries
+        environment.move_entity(entity, (entity.position[0] + dx, entity.position[1] + dy))
+
+
+class ResourceConsumerComponent:
+    """Component that handles resource consumption."""
+
+    def __init__(self, config: Optional[ConsumerConfig] = None) -> None:
+        """Initialize the resource consumer component.
+
+        Args:
+            config: Consumer configuration parameters
+        """
+        self.config = config or ConsumerConfig()
+        self.resource_type = self.config.resource_type
+        self.consumption_rate = self.config.consumption_rate
+        self.energy_conversion = self.config.energy_conversion
+
+    def update(self, entity: "Entity", environment: "Environment") -> None:
+        """Consume resources and convert to energy.
+
+        Args:
+            entity: The entity this component belongs to
+            environment: The environment the entity exists in
+        """
+        # Get energy component
+        energy_component = entity.get_component_typed("energy", EnergyComponent)
+        if energy_component is None:
+            return
+
+        # Try to consume resources
+        consumed = environment.consume_resource(
+            entity.position,
+            self.resource_type,
+            self.consumption_rate
+        )
         
-        # Convert to energy
-        energy_gain = to_consume * self.energy_conversion
-        energy_component.add_energy(energy_gain)
-        
-        # Update resource in environment
-        new_amount = available - to_consume
-        if new_amount > 0:
-            environment.add_resource(self.resource_type, entity.position, new_amount)
-        else:
-            environment.remove_resource(self.resource_type, entity.position)
+        if consumed > 0:
+            # Convert resource to energy
+            energy_gained = consumed * self.energy_conversion
+            energy_component.add_energy(energy_gained)
 
 
 class ReproductionComponent:
     """Component that handles entity reproduction."""
 
-    def __init__(
-        self,
-        reproduction_threshold: float = 80.0,
-        reproduction_cost: float = 50.0,
-        reproduction_chance: float = 0.1,
-        offspring_energy: float = 50.0,
-        mutation_rate: float = 0.1,
-        inherit_components: Optional[Dict[str, bool]] = None,
-    ) -> None:
+    def __init__(self, config: Optional[ReproductionConfig] = None) -> None:
         """Initialize the reproduction component.
 
         Args:
-            reproduction_threshold: Energy required to reproduce
-            reproduction_cost: Energy cost of reproduction
-            reproduction_chance: Chance to reproduce when conditions are met
-            offspring_energy: Initial energy for offspring
-            mutation_rate: Rate at which component values mutate
-            inherit_components: Dict of component types to inherit (True) or not (False)
+            config: Reproduction configuration parameters
         """
-        self.reproduction_threshold = reproduction_threshold
-        self.reproduction_cost = reproduction_cost
-        self.reproduction_chance = reproduction_chance
-        self.offspring_energy = offspring_energy
-        self.mutation_rate = mutation_rate
-        self.inherit_components = inherit_components or {
-            "energy": True,
-            "movement": True,
-            "consumer": True,
-            "reproduction": True
-        }
+        self.config = config or ReproductionConfig()
+        self.reproduction_threshold = self.config.reproduction_threshold
+        self.reproduction_cost = self.config.reproduction_cost
+        self.reproduction_chance = self.config.reproduction_chance
+        self.offspring_energy = self.config.offspring_energy
+        self.mutation_rate = self.config.mutation_rate
+        self.inherit_components = self.config.inherit_components
 
     def update(self, entity: "Entity", environment: "Environment") -> None:
         """Update reproduction state and potentially create offspring.
