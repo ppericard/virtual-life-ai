@@ -125,4 +125,25 @@ dmypy.json
 
 # OS specific files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+desktop.ini
+
+# Cursor IDE
+.cursor/
+.cursorrules
+.cursorignore
+.specstory/
+
+# Additional Python environments
+.python-version
+pythonenv*
+.venv/
+.env/
+
+# Additional test caches
+.pytest_cache/
+__pycache__/
+*.pyc
+.coverage
+coverage.xml
+.hypothesis/

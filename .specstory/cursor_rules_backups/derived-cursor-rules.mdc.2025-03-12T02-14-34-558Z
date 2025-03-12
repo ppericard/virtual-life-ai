@@ -1,0 +1,68 @@
+
+## PROJECT OVERVIEW
+
+This project aims to create "VirtualLife," a life simulator focusing on the computation of generations/turns given a virtual environment, starting individuals/cells, and a set of parameters and rules.  The simulator will allow reproduction of simple models like Conway's Game of Life and exploration of more complex ecological behaviors (predator-prey, mutualism, etc.).  The primary development language will be Python 3, with potential use of C for computationally intensive parts.  Iterative development with continuous delivery is planned.
+
+## CODE STYLE
+
+PEP 8 should be followed as a starting point.  Further style guidelines will be defined based on project needs and community consensus.
+
+## FOLDER ORGANIZATION
+
+The project will use a clear and consistent folder structure as defined in the project's technical specifications document.
+
+## TECH STACK
+
+- Python 3 (Primary)  Python 3.10+ specified in roadmap.
+- PyPy (Potential)
+- C (Potential for computationally intensive tasks)
+- NumPy
+- SciPy
+- Pandas
+- Matplotlib (basic)
+- Pygame (interactive)
+- Pytest
+- Sphinx
+- Poetry
+- GitHub Actions
+- (Interface technologies to be determined: Terminal, Web Browser, Android App - future considerations)
+
+
+## PROJECT-SPECIFIC STANDARDS
+
+- Adhere to the defined code style guidelines.
+- Use version control (Git) effectively.
+- Follow the established workflow and release rules.
+- Prioritize algorithmic optimization over premature implementation optimization.
+
+
+## WORKFLOW & RELEASE RULES
+
+- Iterative development with continuous delivery.
+- Details on branching strategy, pull requests, code reviews, etc., are defined in the CONTRIBUTING.md file.
+
+
+## REFERENCE EXAMPLES
+
+- Conway's Game of Life (as a starting point and simple example)
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+- Use Markdown for documentation.
+- Maintain a detailed roadmap and specifications document (as exemplified by 2025-03-12_10-00-virtuallife-project-roadmap-and-specifications.md).  All documentation will follow the Google style guide.
+
+## DEBUGGING
+
+Debugging strategies and tools will be established as needed and documented in the project's wiki or relevant documentation.
+
+## FINAL DOs AND DON'Ts
+
+- **DO:** Prioritize algorithmic optimization.
+- **DO:** Use version control effectively.
+- **DO:** Follow the established workflow and release rules.
+- **DO:** Write clear and concise code.
+- **DO:** Document your code thoroughly.  Use Google style docstrings.
+- **DO:** Use type annotations.
+- **DON'T:** Introduce unnecessary complexity prematurely.
+- **DON'T:** Neglect testing.
+- **DON'T:** Commit without running pre-commit hooks.

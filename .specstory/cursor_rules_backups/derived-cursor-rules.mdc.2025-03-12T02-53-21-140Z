@@ -1,0 +1,77 @@
+
+## PROJECT OVERVIEW
+
+This project aims to create "VirtualLife," a life simulator focusing on the computation of generations/turns given a virtual environment, starting individuals/cells, and a set of parameters and rules.  The simulator will allow reproduction of simple models like Conway's Game of Life and exploration of more complex ecological behaviors (predator-prey, mutualism, etc.).  The primary development language will be Python 3, with potential use of C for computationally intensive parts.  Iterative development with continuous delivery is planned.  The project will utilize a modular design with separate components for environment, entities, rules, and visualization.  Extensibility will be a key feature, allowing for easy addition of new entity types, behaviors, and environmental features.  Built-in tools for data collection, analysis, and visualization are planned.  Efficient algorithms will be prioritized, with potential for optimization in critical areas.  As specified in the roadmap (2025-03-12_10-00-virtuallife-project-roadmap-and-specifications.md), Python 3.10+ will be used.  Interface technologies will be determined iteratively, starting with a terminal interface, and potentially expanding to web browser and Android app interfaces in the future.  The project is documented in detail in the Roadmap and Specifications document (version 0.2.0). The project specifications have been simplified for easier AI implementation (2025-03-12_10-41-improving-project-specifications-for-ai.md).  The project's core principles are modularity, extensibility, observability, and performance.  The project is licensed under the GPL-3.0 license.  A phased approach to development is recommended, focusing on core functionality before expanding to more complex features.  The project will utilize a clear, consistent component system for entities as described in (2025-03-12_10-41-improving-project-specifications-for-ai.md). A phased approach to development is outlined in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+
+## CODE STYLE
+
+PEP 8 should be followed as a starting point.  Further style guidelines will be defined based on project needs and community consensus.  Code formatting will use Black with a line length of 88. Import sorting will use isort with Black compatibility.  Type annotations will be required for all functions and methods.  Google-style docstrings will be used for all public APIs.  Naming conventions will follow these guidelines: Classes: `CamelCase`, Functions and variables: `snake_case`, Constants: `UPPER_SNAKE_CASE`, Private methods/attributes: `_leading_underscore`.  A component-based design is recommended for entities, as detailed in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+
+## FOLDER ORGANIZATION
+
+The project will use a clear and consistent folder structure as defined in the project's technical specifications document.  The main package will be organized as follows: `virtuallife/{core,behaviors,rules,analysis,visualization,utils}`.  Tests will be located in `tests/{unit,integration,functional,performance}`. Documentation will reside in the `docs` folder, and examples in the `examples` folder.
+
+## TECH STACK
+
+- Python 3 (Primary) Python 3.10+ specified in roadmap.
+- PyPy (Potential)
+- C (Potential for computationally intensive tasks)  Cython/C extensions considered for performance-critical sections.
+- NumPy
+- SciPy
+- Pandas
+- Matplotlib (basic)
+- Pygame (interactive)
+- Pytest
+- Sphinx
+- Poetry
+- GitHub Actions
+- Click
+- PyYAML
+- h5py
+- tqdm
+
+## PROJECT-SPECIFIC STANDARDS
+
+- Adhere to the defined code style guidelines.
+- Use version control (Git) effectively.
+- Follow the established workflow and release rules.
+- Prioritize algorithmic optimization over premature implementation optimization.
+- Use pre-commit hooks to ensure code quality before committing.
+- Adhere to the GPL-3.0 license.
+- Utilize a phased development approach as outlined in the updated project specifications (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+- Implement a consistent component system for entities as described in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+
+
+## WORKFLOW & RELEASE RULES
+
+- Iterative development with continuous delivery.
+- Details on branching strategy, pull requests, code reviews, etc., are defined in the CONTRIBUTING.md file.  Semantic Versioning will be followed for releases.  A phased approach to development is recommended, with clear deliverables for each phase, as detailed in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+
+## REFERENCE EXAMPLES
+
+- Conway's Game of Life (as a starting point and simple example)
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+- Use Markdown for documentation.
+- Maintain a detailed roadmap and specifications document (as exemplified by 2025-03-12_10-00-virtuallife-project-roadmap-and-specifications.md).  All documentation will follow the Google style guide.  Sphinx will be used for documentation generation.  Version 0.2.0 of the roadmap and specifications is the current working document. The roadmap has been updated to include more detail on evolution scenarios, visualization and analysis, and concurrent simulations (version 0.2.0).  The project specifications have been updated to include a simplified architecture and phased approach (2025-03-12_10-41-improving-project-specifications-for-ai.md).  The simplified specifications from (2025-03-12_10-41-improving-project-specifications-for-ai.md) should be followed for implementation.
+
+## DEBUGGING
+
+Debugging strategies and tools will be established as needed and documented in the project's wiki or relevant documentation.
+
+## FINAL DOs AND DON'Ts
+
+- **DO:** Prioritize algorithmic optimization.
+- **DO:** Use version control effectively.
+- **DO:** Follow the established workflow and release rules.
+- **DO:** Write clear and concise code.
+- **DO:** Document your code thoroughly.  Use Google style docstrings.
+- **DO:** Use type annotations.
+- **DO:** Run pre-commit hooks before committing.
+- **DO:** Adhere to the GPL-3.0 license.
+- **DO:** Utilize a component-based design for entities as described in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+- **DO:** Follow the phased development approach as outlined in (2025-03-12_10-41-improving-project-specifications-for-ai.md).
+- **DON'T:** Introduce unnecessary complexity prematurely.
+- **DON'T:** Neglect testing.
+- **DON'T:** Commit without running pre-commit hooks.
