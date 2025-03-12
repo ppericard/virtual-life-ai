@@ -106,6 +106,47 @@ def test_run_simulation_no_visualization(runner, mock_setup_simulation):
     mock_runner.run.assert_called_once_with(3)
 
 
+def test_run_simulation_with_invalid_visualizer(runner):
+    """Test running a simulation with an invalid visualizer."""
+    # Act
+    with patch('builtins.print') as mock_print:
+        with patch('logging.Logger.error') as mock_error:
+            result = runner.invoke(app, ["run", "--visualizer", "invalid"], catch_exceptions=False)
+    
+    # Assert
+    mock_error.assert_called_once_with("Unknown visualizer type: invalid")
+
+
+def test_run_simulation_keyboard_interrupt(runner, mock_setup_simulation):
+    """Test simulation being interrupted by KeyboardInterrupt."""
+    # Arrange
+    mock_runner, mock_visualizer = mock_setup_simulation.return_value
+    mock_runner.run.side_effect = KeyboardInterrupt()
+    
+    # Act
+    with patch('logging.Logger.info') as mock_info:
+        result = runner.invoke(app, ["run"], catch_exceptions=False)
+    
+    # Assert
+    assert result.exit_code == 0
+    mock_info.assert_any_call("Simulation stopped by user")
+
+
+def test_run_simulation_general_exception(runner, mock_setup_simulation):
+    """Test simulation encountering a general exception."""
+    # Arrange
+    mock_runner, mock_visualizer = mock_setup_simulation.return_value
+    mock_runner.run.side_effect = Exception("Test error")
+
+    # Act
+    with patch('logging.Logger.exception') as mock_exception:
+        result = runner.invoke(app, ["run"], catch_exceptions=True)
+        
+        # Assert
+        assert result.exit_code != 0
+        mock_exception.assert_called_once()
+
+
 def test_show_info_with_defaults(runner):
     """Test displaying information about default configuration."""
     # Act
@@ -134,6 +175,19 @@ def test_show_info_with_config(runner, temp_config_file):
     assert "Movement" in result.stdout
     assert "Reproduction" in result.stdout
     assert "Resources" in result.stdout
+
+
+def test_show_info_with_exception(runner):
+    """Test displaying information with an exception."""
+    # Arrange
+    with patch("virtuallife.cli.load_or_default", side_effect=Exception("Test error")):
+        # Act
+        with patch('logging.Logger.exception') as mock_exception:
+            result = runner.invoke(app, ["info"], catch_exceptions=True)
+            
+            # Assert
+            assert result.exit_code != 0
+            mock_exception.assert_called_once()
 
 
 def test_create_config(runner):
@@ -180,6 +234,60 @@ def test_create_config(runner):
             os.unlink(output_path)
 
 
+def test_create_config_with_invalid_boundary(runner):
+    """Test creating a configuration file with an invalid boundary condition."""
+    # Arrange
+    with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp:
+        output_path = tmp.name
+    
+    # Clean up before test (in case it exists)
+    if os.path.exists(output_path):
+        os.unlink(output_path)
+    
+    try:
+        # Act
+        with patch('logging.Logger.warning') as mock_warning:
+            result = runner.invoke(
+                app, 
+                [
+                    "create-config", 
+                    output_path, 
+                    "--boundary", "invalid"
+                ],
+                catch_exceptions=False
+            )
+        
+        # Assert
+        assert result.exit_code == 0
+        mock_warning.assert_called_once_with("Invalid boundary condition 'invalid', using 'wrapped'")
+        
+        # Verify the contents of the config file
+        from virtuallife.config.loader import load_config
+        config = load_config(output_path)
+        assert config.environment.boundary_condition == "wrapped"
+        
+    finally:
+        # Clean up
+        if os.path.exists(output_path):
+            os.unlink(output_path)
+
+
+def test_create_config_with_exception(runner):
+    """Test creating a configuration file with an exception."""
+    # Arrange
+    with patch("virtuallife.cli.save_config", side_effect=Exception("Test error")):
+        # Act
+        with patch('logging.Logger.exception') as mock_exception:
+            result = runner.invoke(
+                app, ["create-config", "test.yaml"], 
+                catch_exceptions=True
+            )
+            
+            # Assert
+            assert result.exit_code != 0
+            mock_exception.assert_called_once()
+
+
 def test_setup_simulation():
     """Test the setup_simulation function directly."""
     # Import the function to test it directly
@@ -205,4 +313,18 @@ def test_setup_simulation():
     # Test with no visualizer
     runner, visualizer = setup_simulation(config, "none")
     assert runner is not None
-    assert visualizer is None 
+    assert visualizer is None
+
+
+def test_setup_simulation_with_random_seed():
+    """Test the setup_simulation function with a random seed."""
+    # Import the function to test it directly
+    from virtuallife.cli import setup_simulation
+    
+    # Create a configuration with a random seed
+    config = SimulationConfig(random_seed=42)
+    
+    # Test with console visualizer
+    runner, visualizer = setup_simulation(config, "console")
+    assert runner is not None
+    assert visualizer is not None 
