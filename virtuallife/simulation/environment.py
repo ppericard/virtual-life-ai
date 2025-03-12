@@ -6,9 +6,12 @@ and defines the boundaries of the simulation space.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Set, Tuple, List, Optional
+from typing import Dict, Set, Tuple, List, Optional, TYPE_CHECKING
 from uuid import UUID
 from collections import defaultdict
+
+if TYPE_CHECKING:
+    from virtuallife.simulation.entity import Entity
 
 
 @dataclass
