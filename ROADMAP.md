@@ -74,23 +74,23 @@ This project is designed to be implemented by an AI agent, which requires specia
   - ✅ Basic statistics output
   - ✅ Matplotlib visualization option
   - ✅ **Tests verifying visualization output** (95-96% coverage)
-- ⏳ Predator-Prey implementation:
+- ✅ Predator-Prey implementation:
   - ✅ Plants (resources)
   - ✅ Herbivores (consume plants)
   - ✅ Predators (consume herbivores)
   - ✅ Simple movement
-  - ❌ Basic reproduction mechanics
+  - ✅ Basic reproduction mechanics
   - ✅ **Tests verifying ecosystem dynamics** (94% coverage)
   - ✅ **Documentation of ecosystem rules and interactions**
-- ⏳ Configuration system:
-  - ❌ Pydantic models for type-safe configuration
-  - ❌ YAML configuration loading
-  - ❌ **Tests for configuration validation**
-  - ❌ **Examples of different configurations**
-- ❌ Command-line interface:
-  - ❌ Basic simulation control commands
-  - ❌ **Tests for CLI functionality**
-  - ❌ **Documentation with usage examples**
+- ✅ Configuration system:
+  - ✅ Pydantic models for type-safe configuration
+  - ✅ YAML configuration loading
+  - ✅ **Tests for configuration validation**
+  - ✅ **Examples of different configurations**
+- ✅ Command-line interface:
+  - ✅ Basic simulation control commands
+  - ✅ **Tests for CLI functionality**
+  - ✅ **Documentation with usage examples**
 
 **Testing Requirements** (✅ Achieved):
 - ✅ **Unit Tests**: Every function and method has corresponding tests
@@ -109,11 +109,11 @@ This project is designed to be implemented by an AI agent, which requires specia
 
 **Phase 1 Progress**:
 - Week 1: ✅ Core implementation, entity components, tests and documentation
-- Week 2: ⏳ Predator-prey ecosystem, visualization, configuration
+- Week 2: ✅ Predator-prey ecosystem, visualization, configuration and CLI
   - ✅ Visualization system completed
-  - ⏳ Predator-prey ecosystem (reproduction pending)
-  - ❌ Configuration system pending
-  - ❌ CLI interface pending
+  - ✅ Predator-prey ecosystem completed
+  - ✅ Configuration system completed
+  - ✅ CLI interface completed
 
 ### Phase 2: API and Enhanced Visualization (Weeks 3-4)
 
