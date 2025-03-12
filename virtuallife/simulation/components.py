@@ -234,6 +234,10 @@ class ReproductionComponent:
         Returns:
             A new component instance with potentially mutated values
         """
+        # Special handling for MarkerComponent
+        if component.__class__.__name__ == "MarkerComponent":
+            return component.__class__(marker_type=component.marker_type)
+        
         # Create a new instance of the same component type
         new_component = component.__class__()
         

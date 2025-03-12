@@ -112,7 +112,11 @@ class MatplotlibVisualizer(Visualizer):
         
         # Update resource plot if available
         if self.resource_plot is not None and "food" in env.resources:
-            self.resource_plot.set_array(env.resources["food"])
+            # Convert resources to numpy array
+            resource_array = np.zeros((env.height, env.width))
+            for (x, y), value in env.resources["food"].items():
+                resource_array[y, x] = value
+            self.resource_plot.set_array(resource_array)
         
         # Redraw
         self.fig.canvas.draw()
