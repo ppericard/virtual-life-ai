@@ -40,7 +40,7 @@ The project aims to create a flexible framework capable of simulating scenarios 
 - **Continuous Testing**: Run tests frequently and maintain high coverage throughout development
 
 #### Deliverables:
-- [x] Project structure with Poetry setup
+- [ ] Project structure with Poetry setup
 - [ ] Core interfaces (first develop these):
   - [ ] `EnvironmentInterface`: Protocol defining environment operations
   - [ ] `EntityInterface`: Protocol defining entity capabilities
