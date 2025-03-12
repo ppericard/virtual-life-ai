@@ -4,7 +4,7 @@ VirtualLife is an artificial life simulator designed to model the emergence of c
 
 ## Project Vision
 
-VirtualLife aims to create a flexible framework capable of simulating scenarios ranging from Conway's Game of Life to complex ecological systems featuring predator-prey relationships, mutualism, and other emergent behaviors.
+VirtualLife aims to create a flexible framework capable of simulating scenarios ranging from simple predator-prey ecosystems to complex ecological systems featuring mutualism, territorial behaviors, and other emergent phenomena.
 
 ## Key Features
 
@@ -14,7 +14,7 @@ VirtualLife aims to create a flexible framework capable of simulating scenarios 
 - Species concept with trait inheritance and evolution
 - Resource system with generation and consumption mechanics
 - Data collection and analysis tools for emergent behaviors
-- Multiple visualization options (terminal, GUI)
+- **Web-based visualization and control interface**
 - Comprehensive test suite with minimum 90% coverage
 
 ## Development Principles
@@ -44,19 +44,24 @@ virtuallife/
 │   └── simulation.py      # Simulation engine
 ├── components/            # Entity component implementations
 ├── behaviors/             # Entity behavior implementations
+├── web/                   # Web interface components
+│   ├── static/            # Static assets (CSS, JS)
+│   ├── templates/         # HTML templates
+│   ├── routes.py          # Web routes
+│   └── socket.py          # WebSocket handlers
 ├── visualization/         # Visualization components
-│   ├── terminal.py        # Terminal-based visualization
-│   ├── gui.py             # GUI visualization (Pygame)
+│   ├── renderer.py        # Base renderer
+│   └── web_renderer.py    # Web-specific rendering
 └── cli.py                 # Command-line interface
 ```
 
 ## Implementation Phases
 
-1. **Core Simulation Framework**: Environment, entities, simulation engine, and Conway's Game of Life
-2. **Resources and Behaviors**: Resource generation/consumption, entity behaviors, enhanced visualization
-3. **Species and Genetics**: Species templates, trait inheritance, simple evolution
-4. **Advanced Ecology**: Environmental factors, complex entity interactions, analysis tools
-5. **Advanced Genetics**: Genetic systems, evolutionary dynamics, phylogenetic tracking
+1. **Core Simulation Framework**: Environment, entities, simulation engine, and simple predator-prey ecosystem
+2. **Web Interface**: Basic web visualization and control interface
+3. **Resources and Behaviors**: Resource generation/consumption, entity behaviors
+4. **Species and Genetics**: Species templates, trait inheritance, simple evolution
+5. **Advanced Ecology**: Environmental factors, complex entity interactions, analysis tools
 
 ## Testing Approach
 
@@ -79,21 +84,28 @@ Test coverage requirements:
 
 ## Examples
 
-### Conway's Game of Life
+### Running the Web Interface
 
 ```bash
-# Run Conway's Game of Life with a random initial pattern
-virtuallife conway --width 50 --height 50 --pattern random
+# Start the web server
+virtuallife web --port 5000
+```
 
-# Run Conway's Game of Life with a glider pattern
-virtuallife conway --width 50 --height 50 --pattern glider
+### Running Predator-Prey Simulation
+
+```bash
+# Run predator-prey with default settings
+virtuallife predator-prey --width 50 --height 50 --web
+
+# Run with custom parameters
+virtuallife predator-prey --width 100 --height 100 --plant-growth 0.2 --herbivore-count 50 --predator-count 10 --web
 ```
 
 ### Custom Simulation
 
 ```bash
 # Run a custom simulation from a configuration file
-virtuallife run --config examples/predator_prey.yaml --output results.json
+virtuallife run --config examples/advanced_ecosystem.yaml --output results.json --web
 ```
 
 ## Development Status

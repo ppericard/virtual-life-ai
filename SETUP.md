@@ -9,6 +9,7 @@ This document provides instructions for setting up the development environment f
 - Python 3.10 or higher
 - Git
 - Poetry (dependency management)
+- Node.js and npm (for frontend development, optional)
 
 ### Setup Steps
 
@@ -43,6 +44,16 @@ poetry shell
 pre-commit install
 ```
 
+6. **Install frontend dependencies (optional)**
+
+If you want to customize the web interface beyond the provided templates:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
 ## Project Structure
 
 The project structure follows a strict modular design with small, focused files:
@@ -55,6 +66,7 @@ virtual-life-ai/
 │   │   ├── core/          # Tests for core modules
 │   │   ├── components/    # Tests for components
 │   │   ├── behaviors/     # Tests for behaviors
+│   │   ├── web/           # Tests for web components
 │   │   └── utils/         # Tests for utilities
 │   ├── integration/       # Integration tests (20% of tests)
 │   ├── functional/        # Functional tests (10% of tests)
@@ -67,10 +79,7 @@ virtual-life-ai/
 │   │   │   ├── __init__.py
 │   │   │   ├── entity.py
 │   │   │   └── environment.py
-│   │   ├── environment/   # Environment implementation
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   └── boundary.py
+│   │   ├── environment.py # Environment implementation
 │   │   ├── entity.py      # Entity implementation
 │   │   ├── species.py     # Species implementation
 │   │   └── simulation.py  # Simulation engine
@@ -84,18 +93,28 @@ virtual-life-ai/
 │   │   ├── __init__.py
 │   │   ├── random_movement.py
 │   │   └── reproduction.py
+│   ├── web/               # Web interface components
+│   │   ├── __init__.py
+│   │   ├── static/        # Static assets (CSS, JS)
+│   │   │   ├── css/       # Stylesheets
+│   │   │   ├── js/        # JavaScript files
+│   │   │   └── img/       # Images
+│   │   ├── templates/     # HTML templates
+│   │   ├── routes.py      # Web routes
+│   │   ├── socket.py      # WebSocket handlers
+│   │   └── app.py         # Flask application
 │   ├── visualization/     # Visualization components
 │   │   ├── __init__.py
-│   │   ├── terminal.py    # Terminal-based visualization
-│   │   └── gui.py         # GUI visualization (Pygame)
+│   │   ├── renderer.py    # Base renderer
+│   │   └── web_renderer.py # Web-specific rendering
 │   ├── utils/             # Utility functions and helpers
 │   │   ├── __init__.py
 │   │   ├── spatial.py
 │   │   └── config.py      # Configuration utilities
 │   └── cli.py             # Command-line interface
 ├── examples/              # Example simulations
-│   ├── conway.yaml        # Conway's Game of Life configuration
-│   └── predator_prey.yaml # Predator-prey simulation
+│   ├── predator_prey.yaml # Predator-prey simulation (default)
+│   └── advanced_ecosystem.yaml # More complex ecosystem
 ├── .github/               # GitHub actions and workflows
 ├── .gitignore
 ├── pyproject.toml         # Project metadata and dependencies
@@ -128,9 +147,11 @@ The project uses the following dependencies:
 ### Production Dependencies
 
 - **NumPy**: Efficient numerical operations
+- **Flask**: Web framework
+- **Flask-SocketIO**: Real-time communication
 - **PyYAML**: Configuration file handling
 - **Click**: Command-line interface
-- **Pygame**: Interactive visualization (optional)
+- **D3.js**: Data visualization (client-side)
 - **tqdm**: Progress bars for long-running simulations
 
 ### Development Dependencies
@@ -197,38 +218,35 @@ pytest --cov=virtuallife --cov-report=html
 
 This generates a report in `htmlcov/index.html`.
 
-### 4. Property-Based Testing
+## Running the Web Interface
 
-For complex behaviors, use property-based testing with Hypothesis:
-
-```python
-from hypothesis import given, strategies as st
-
-@given(
-    width=st.integers(min_value=1, max_value=100),
-    height=st.integers(min_value=1, max_value=100)
-)
-def test_environment_creation(width, height):
-    """Test that environments of various sizes can be created."""
-    env = Environment(width, height)
-    assert env.width == width
-    assert env.height == height
-    assert len(env.entities) == 0
-```
-
-## Running the Application
-
-Run Conway's Game of Life:
+Start the web interface:
 
 ```bash
-python -m virtuallife.cli conway --width 50 --height 50 --pattern glider
+python -m virtuallife.cli web --port 5000
 ```
 
-Run a custom simulation:
+This will start the Flask web server on port 5000. You can then access the web interface by navigating to `http://localhost:5000` in your web browser.
+
+## Running the Predator-Prey Simulation
+
+Run the predator-prey simulation with the web interface:
 
 ```bash
-python -m virtuallife.cli run --config examples/predator_prey.yaml
+python -m virtuallife.cli predator-prey --width 50 --height 50 --plant-growth 0.1 --herbivore-count 20 --predator-count 5 --web
 ```
+
+This will start the web server and open a browser window with the predator-prey simulation configured with the specified parameters.
+
+## Running a Custom Simulation
+
+Run a custom simulation from a configuration file:
+
+```bash
+python -m virtuallife.cli run --config examples/advanced_ecosystem.yaml --web
+```
+
+This will start the web server and open a browser window with the advanced ecosystem simulation.
 
 ## Code Style
 
@@ -249,9 +267,9 @@ This project follows these style guidelines:
 
 Follow the phased approach outlined in the [ROADMAP.md](ROADMAP.md):
 
-1. Start with the core simulation framework (environment, entities, simulation engine)
-2. Implement Conway's Game of Life as a proof of concept
-3. Add resources and basic entity behaviors
+1. Start with the core simulation framework and web interface
+2. Implement predator-prey ecosystem as a proof of concept
+3. Add resources and enhanced entity behaviors
 4. Implement species concept and simple genetics
 5. Add advanced ecology and analysis tools
 

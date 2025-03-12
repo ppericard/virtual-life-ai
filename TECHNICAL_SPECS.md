@@ -8,18 +8,30 @@ VirtualLife follows a modular, component-based architecture with clear separatio
 
 ```
 virtuallife/
-├── core/               # Core simulation components
-│   ├── environment.py  # Environment implementation
-│   ├── entity.py       # Base entity classes
-│   ├── species.py      # Species definitions
-│   └── simulation.py   # Simulation engine
-├── behaviors/          # Entity behavior implementations
-├── components/         # Entity component implementations
-├── visualization/      # Visualization components
-│   ├── terminal.py     # Terminal-based visualization
-│   ├── gui.py          # GUI visualization (Pygame)
-├── utils/              # Utility functions and helpers
-└── cli.py              # Command-line interface
+├── core/                  # Core simulation components
+│   ├── interfaces/        # Protocol definitions
+│   │   ├── entity.py      # Entity interface
+│   │   └── environment.py # Environment interface
+│   ├── environment.py     # Environment implementation
+│   ├── entity.py          # Base entity classes
+│   ├── species.py         # Species definitions
+│   └── simulation.py      # Simulation engine
+├── behaviors/             # Entity behavior implementations
+├── components/            # Entity component implementations
+├── web/                   # Web interface components
+│   ├── static/            # Static assets (CSS, JS)
+│   │   ├── css/           # Stylesheets
+│   │   ├── js/            # JavaScript files
+│   │   └── img/           # Images
+│   ├── templates/         # HTML templates
+│   ├── routes.py          # Web routes
+│   ├── socket.py          # WebSocket handlers
+│   └── app.py             # Flask application
+├── visualization/         # Visualization components
+│   ├── renderer.py        # Base renderer
+│   └── web_renderer.py    # Web-specific rendering
+├── utils/                 # Utility functions and helpers
+└── cli.py                 # Command-line interface
 ```
 
 ## Development Approach
@@ -63,15 +75,18 @@ tests/
 │   │   └── test_species.py
 │   ├── components/         # Tests for components
 │   ├── behaviors/          # Tests for behaviors
+│   ├── web/                # Tests for web components
+│   │   ├── test_routes.py
+│   │   └── test_socket.py
 │   └── utils/              # Tests for utilities
 ├── integration/            # Integration tests (20% of tests)
 │   ├── test_entity_environment.py
 │   ├── test_species_entity.py
-│   └── test_simulation_visualization.py
+│   └── test_web_simulation.py
 ├── functional/             # Functional tests (10% of tests)
-│   ├── test_conway.py
 │   ├── test_predator_prey.py
-│   └── test_resource_flow.py
+│   ├── test_advanced_ecology.py
+│   └── test_web_interface.py
 └── conftest.py             # Shared test fixtures
 ```
 
@@ -82,224 +97,341 @@ tests/
 - **Integration test coverage**: All module interactions must be tested
 - **Functional test coverage**: All user-facing features must have tests
 
-### 3. Test Types and Techniques
+## Web Interface Architecture
 
-#### Unit Tests
+The web interface is a core component of VirtualLife, providing real-time visualization and control of simulations.
 
-Every module must have comprehensive unit tests covering:
+### 1. Server-Side Components
 
-- **Normal operation**: Typical usage scenarios
-- **Edge cases**: Boundary conditions (empty, maximum, minimum values)
-- **Error handling**: Proper error responses for invalid inputs
-- **State transitions**: Changes in object state
-
-Example for `Environment` class:
+#### Flask Application Structure
 
 ```python
-# tests/unit/core/test_environment.py
-import pytest
-import uuid
-from virtuallife.core.environment import Environment
-from virtuallife.core.entity import Entity
+# web/app.py
+from flask import Flask
+from flask_socketio import SocketIO
 
-class TestEnvironment:
-    def test_init(self):
-        """Test environment initialization with different parameters."""
-        env = Environment(10, 20, "wrapped")
-        assert env.width == 10
-        assert env.height == 20
-        assert env.boundary_condition == "wrapped"
-        assert len(env.entities) == 0
+app = Flask(__name__)
+app.config.from_object('config.Config')
+socketio = SocketIO(app)
 
-    def test_add_entity(self):
-        """Test adding an entity to the environment."""
-        env = Environment(10, 10)
-        entity_id = uuid.uuid4()
-        entity = Entity(entity_id, (5, 5))
-        
-        env.add_entity(entity)
-        
-        assert entity.id in env.entities
-        assert (5, 5) in env.entity_positions
-        assert entity.id in env.entity_positions[(5, 5)]
+# Import routes and socket handlers
+from virtuallife.web import routes, socket
 
-    def test_get_entities_at_empty_position(self):
-        """Test getting entities at an empty position."""
-        env = Environment(10, 10)
-        entities = env.get_entities_at((5, 5))
-        assert len(entities) == 0
+def create_app():
+    return app
 
-    def test_normalize_position_wrapped(self):
-        """Test position normalization with wrapped boundaries."""
-        env = Environment(10, 10, "wrapped")
-        # Test positions outside boundaries
-        assert env.normalize_position((15, 5)) == (5, 5)
-        assert env.normalize_position((-2, 7)) == (8, 7)
-        assert env.normalize_position((3, -1)) == (3, 9)
-        assert env.normalize_position((3, 12)) == (3, 2)
-
-    # Add more tests for other Environment methods...
+def run_app(host='0.0.0.0', port=5000, debug=False):
+    socketio.run(app, host=host, port=port, debug=debug)
 ```
 
-#### Integration Tests
-
-Integration tests must verify correct interaction between modules:
+#### Route Handlers
 
 ```python
-# tests/integration/test_entity_environment.py
-import pytest
-import uuid
-from virtuallife.core.environment import Environment
-from virtuallife.core.entity import Entity
-from virtuallife.components.movement import MovementComponent
+# web/routes.py
+from flask import render_template, jsonify, request
+from virtuallife.web.app import app
+from virtuallife.core.simulation import SimulationManager
 
-class TestEntityEnvironmentInteraction:
-    def test_entity_movement_in_environment(self):
-        """Test that an entity can move within the environment."""
-        # Setup
-        env = Environment(10, 10, "wrapped")
-        entity_id = uuid.uuid4()
-        entity = Entity(entity_id, (5, 5))
-        entity.add_component("movement", MovementComponent("fixed", (1, 0)))
-        env.add_entity(entity)
-        
-        # Execute movement
-        entity.update(env)
-        
-        # Verify position changed
-        assert entity.position == (6, 5)
-        # Verify environment tracking is updated
-        assert entity.id not in env.entity_positions.get((5, 5), set())
-        assert entity.id in env.entity_positions.get((6, 5), set())
+simulation_manager = SimulationManager()
+
+@app.route('/')
+def index():
+    """Render the main simulation page."""
+    return render_template('index.html')
+
+@app.route('/api/simulations', methods=['GET'])
+def list_simulations():
+    """List all active simulations."""
+    return jsonify({
+        'simulations': simulation_manager.get_all_simulations()
+    })
+
+@app.route('/api/simulations', methods=['POST'])
+def create_simulation():
+    """Create a new simulation."""
+    config = request.json
+    simulation_id = simulation_manager.create_simulation(config)
+    return jsonify({
+        'simulation_id': simulation_id
+    })
+
+@app.route('/api/simulations/<simulation_id>', methods=['GET'])
+def get_simulation(simulation_id):
+    """Get details of a specific simulation."""
+    simulation = simulation_manager.get_simulation(simulation_id)
+    return jsonify(simulation.to_dict())
 ```
 
-#### Functional Tests
-
-Functional tests verify system behavior for specific scenarios:
+#### WebSocket Handlers
 
 ```python
-# tests/functional/test_conway.py
-import pytest
-from virtuallife.core.simulation import create_conway_simulation
+# web/socket.py
+from flask_socketio import emit
+from virtuallife.web.app import socketio
+from virtuallife.core.simulation import SimulationManager
 
-class TestConwayPatterns:
-    def test_blinker_pattern(self):
-        """Test the blinker pattern oscillation in Conway's Game of Life."""
-        # Create a vertical blinker
-        initial_pattern = [(5, 4), (5, 5), (5, 6)]
-        sim = create_conway_simulation(10, 10, initial_pattern)
-        
-        # After one step, should become a horizontal line
-        sim.step()
-        
-        # Verify horizontal pattern
-        live_cells = {entity.position for entity in sim.environment.entities.values()}
-        assert (4, 5) in live_cells
-        assert (5, 5) in live_cells
-        assert (6, 5) in live_cells
-        assert len(live_cells) == 3
-        
-        # After another step, should return to vertical line
-        sim.step()
-        
-        # Verify vertical pattern returned
-        live_cells = {entity.position for entity in sim.environment.entities.values()}
-        assert (5, 4) in live_cells
-        assert (5, 5) in live_cells
-        assert (5, 6) in live_cells
-        assert len(live_cells) == 3
+simulation_manager = SimulationManager()
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection."""
+    emit('connection_response', {'status': 'connected'})
+
+@socketio.on('simulation_control')
+def handle_simulation_control(data):
+    """Handle simulation control commands."""
+    simulation_id = data.get('simulation_id')
+    command = data.get('command')
+    params = data.get('params', {})
+    
+    simulation = simulation_manager.get_simulation(simulation_id)
+    result = simulation.execute_command(command, **params)
+    
+    emit('simulation_control_response', {
+        'simulation_id': simulation_id,
+        'command': command,
+        'result': result
+    })
+
+@socketio.on('request_state')
+def handle_request_state(data):
+    """Send current simulation state to client."""
+    simulation_id = data.get('simulation_id')
+    simulation = simulation_manager.get_simulation(simulation_id)
+    state = simulation.get_current_state()
+    
+    emit('simulation_state_update', {
+        'simulation_id': simulation_id,
+        'state': state
+    })
 ```
 
-#### Property-Based Testing
+### 2. Client-Side Components
 
-For complex behaviors, use property-based testing to explore the state space:
+#### HTML Structure
 
-```python
-# tests/unit/core/test_conway_properties.py
-import pytest
-from hypothesis import given, strategies as st
-from virtuallife.core.simulation import create_conway_simulation
-
-class TestConwayProperties:
-    @given(
-        width=st.integers(min_value=10, max_value=50),
-        height=st.integers(min_value=10, max_value=50),
-        live_cells=st.lists(
-            st.tuples(
-                st.integers(min_value=1, max_value=48),
-                st.integers(min_value=1, max_value=48)
-            ),
-            min_size=1, max_size=20, unique=True
-        )
-    )
-    def test_empty_corners_remain_empty(self, width, height, live_cells):
-        """Test that empty corners remain empty after one step (Conway property)."""
-        # Create simulation with given live cells
-        sim = create_conway_simulation(width, height, live_cells)
+```html
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirtualLife Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VirtualLife Simulator</h1>
+        </header>
         
-        # Empty corners
-        corners = [(0, 0), (0, height-1), (width-1, 0), (width-1, height-1)]
+        <div class="simulation-controls">
+            <button id="start-btn">Start</button>
+            <button id="pause-btn">Pause</button>
+            <button id="step-btn">Step</button>
+            <button id="reset-btn">Reset</button>
+            <div class="speed-control">
+                <label for="speed-slider">Speed:</label>
+                <input type="range" id="speed-slider" min="1" max="100" value="50">
+            </div>
+        </div>
         
-        # Make sure corners are empty (if not, skip the test)
-        corner_is_empty = True
-        for corner in corners:
-            if any(entity.position == corner for entity in sim.environment.entities.values()):
-                corner_is_empty = False
-                break
-                
-        if corner_is_empty:
-            # After one step, corners should still be empty
-            sim.step()
+        <div class="simulation-container">
+            <canvas id="simulation-canvas"></canvas>
+        </div>
+        
+        <div class="metrics-panel">
+            <h2>Simulation Metrics</h2>
+            <div id="metrics-container"></div>
+        </div>
+        
+        <div class="configuration-panel">
+            <h2>Configuration</h2>
+            <form id="config-form">
+                <!-- Configuration options will be dynamically generated -->
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+```
+
+#### JavaScript Client
+
+```javascript
+// static/js/main.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Connect to WebSocket server
+    const socket = io();
+    
+    // Canvas setup
+    const canvas = document.getElementById('simulation-canvas');
+    const ctx = canvas.getContext('2d');
+    let simulationId = null;
+    let simulationState = null;
+    
+    // Resize canvas to fit container
+    function resizeCanvas() {
+        const container = document.querySelector('.simulation-container');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        renderSimulation();
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    // Socket event handlers
+    socket.on('connect', function() {
+        console.log('Connected to server');
+    });
+    
+    socket.on('simulation_state_update', function(data) {
+        if (data.simulation_id === simulationId) {
+            simulationState = data.state;
+            renderSimulation();
+            updateMetrics(data.state.metrics);
+        }
+    });
+    
+    socket.on('simulation_control_response', function(data) {
+        console.log('Control response:', data);
+    });
+    
+    // UI event handlers
+    document.getElementById('start-btn').addEventListener('click', function() {
+        if (simulationId) {
+            socket.emit('simulation_control', {
+                simulation_id: simulationId,
+                command: 'start'
+            });
+        } else {
+            createNewSimulation();
+        }
+    });
+    
+    document.getElementById('pause-btn').addEventListener('click', function() {
+        if (simulationId) {
+            socket.emit('simulation_control', {
+                simulation_id: simulationId,
+                command: 'pause'
+            });
+        }
+    });
+    
+    document.getElementById('step-btn').addEventListener('click', function() {
+        if (simulationId) {
+            socket.emit('simulation_control', {
+                simulation_id: simulationId,
+                command: 'step'
+            });
+        }
+    });
+    
+    document.getElementById('reset-btn').addEventListener('click', function() {
+        if (simulationId) {
+            socket.emit('simulation_control', {
+                simulation_id: simulationId,
+                command: 'reset'
+            });
+        }
+    });
+    
+    // Rendering functions
+    function renderSimulation() {
+        if (!simulationState) return;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Calculate cell size
+        const cellWidth = canvas.width / simulationState.width;
+        const cellHeight = canvas.height / simulationState.height;
+        
+        // Draw entities
+        simulationState.entities.forEach(entity => {
+            const x = entity.position[0] * cellWidth;
+            const y = entity.position[1] * cellHeight;
             
-            # Verify corners are still empty
-            for corner in corners:
-                assert not any(entity.position == corner for entity in sim.environment.entities.values())
+            // Color based on entity type
+            let color;
+            switch(entity.type) {
+                case 'Plant':
+                    color = '#3CB371'; // Medium Sea Green
+                    break;
+                case 'Herbivore':
+                    color = '#4682B4'; // Steel Blue
+                    break;
+                case 'Predator':
+                    color = '#B22222'; // Firebrick
+                    break;
+                default:
+                    color = '#3498db'; // Default blue
+            }
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, cellWidth, cellHeight);
+        });
+    }
+    
+    function updateMetrics(metrics) {
+        if (!metrics) return;
+        
+        const container = document.getElementById('metrics-container');
+        container.innerHTML = '';
+        
+        // Create metrics display
+        for (const [key, value] of Object.entries(metrics)) {
+            const metricElement = document.createElement('div');
+            metricElement.className = 'metric';
+            metricElement.innerHTML = `<span class="metric-name">${key}:</span> <span class="metric-value">${value}</span>`;
+            container.appendChild(metricElement);
+        }
+    }
+    
+    // Simulation creation
+    function createNewSimulation() {
+        // Get configuration from form
+        const config = getConfigFromForm();
+        
+        // Create simulation via API
+        fetch('/api/simulations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        })
+        .then(response => response.json())
+        .then(data => {
+            simulationId = data.simulation_id;
+            
+            // Request initial state
+            socket.emit('request_state', {
+                simulation_id: simulationId
+            });
+        });
+    }
+    
+    function getConfigFromForm() {
+        // Default configuration for predator-prey simulation
+        return {
+            type: 'predator_prey',
+            width: 50,
+            height: 50,
+            plant_growth_rate: 0.1,
+            initial_plants: 100,
+            initial_herbivores: 20,
+            initial_predators: 5
+        };
+    }
+});
 ```
-
-### 4. Test Fixtures and Mocks
-
-Use fixtures for common test setup and teardown:
-
-```python
-# tests/conftest.py
-import pytest
-import uuid
-from virtuallife.core.environment import Environment
-from virtuallife.core.entity import Entity
-
-@pytest.fixture
-def empty_environment():
-    """Create an empty 10x10 environment with wrapped boundaries."""
-    return Environment(10, 10, "wrapped")
-
-@pytest.fixture
-def entity_at_center():
-    """Create an entity at position (5, 5)."""
-    entity_id = uuid.uuid4()
-    return Entity(entity_id, (5, 5))
-
-@pytest.fixture
-def environment_with_entity(empty_environment, entity_at_center):
-    """Create an environment with a single entity at the center."""
-    empty_environment.add_entity(entity_at_center)
-    return empty_environment, entity_at_center
-```
-
-### 5. Test Documentation
-
-Every test must include:
-
-1. Clear description of what is being tested
-2. Expected behavior
-3. Any special conditions or assumptions
-
-### 6. Continuous Testing
-
-Automated testing must be run:
-
-1. Before each commit
-2. On each pull request
-3. On a scheduled basis (daily/weekly)
 
 ## Core Components
 
@@ -380,454 +512,68 @@ class Environment:
         # Handle wrapped, bounded, or infinite boundaries
 ```
 
-## Module Organization and Interfaces
+### 2. Entity
 
-To ensure clean separation of concerns and prevent circular dependencies, VirtualLife modules are organized hierarchically with clearly defined interfaces.
-
-### Module Dependency Hierarchy
-
-Modules lower in the hierarchy can only depend on modules above them:
-
-```
-1. utils/            # Utility functions (no dependencies)
-2. core/             # Core modules (can use utils)
-   ├── entity.py     # Entity base class
-   ├── environment.py # Environment class
-   ├── species.py    # Species class
-   └── simulation.py # Simulation controller
-3. components/       # Entity components (can use core and utils)
-4. behaviors/        # Entity behaviors (can use core, components and utils)
-5. visualization/    # Visualization (can use core, components and utils)
-6. cli.py            # Command-line interface (can use all modules)
-```
-
-This hierarchy prevents:
-- Circular imports
-- Tight coupling between modules
-- Unexpected side effects
-
-### Interface Contracts
-
-Each module exposes a well-defined interface with strict contracts:
-
-#### 1. Environment Interface
+The `Entity` class represents objects that exist in the environment.
 
 ```python
-# virtuallife/core/environment_interface.py
-from typing import Protocol, Set, Dict, List, Tuple, Any, Optional
-from uuid import UUID
-
-class EnvironmentInterface(Protocol):
-    """Interface defining the environment contract."""
-    
-    width: int
-    height: int
-    boundary_condition: str
-    
-    def add_entity(self, entity: Any) -> UUID:
-        """Add an entity to the environment.
-        
-        Args:
-            entity: Entity to add to the environment
-            
-        Returns:
-            UUID: Entity ID
-            
-        Raises:
-            ValueError: If the entity position is invalid
-        """
-        ...
-        
-    def remove_entity(self, entity_id: UUID) -> None:
-        """Remove an entity from the environment.
-        
-        Args:
-            entity_id: ID of the entity to remove
-            
-        Raises:
-            KeyError: If entity_id does not exist
-        """
-        ...
-        
-    def get_entities_at(self, position: Tuple[int, int]) -> List[Any]:
-        """Get all entities at a specific position.
-        
-        Args:
-            position: (x, y) position to check
-            
-        Returns:
-            List of entities at the position
-        """
-        ...
-        
-    def get_neighborhood(self, position: Tuple[int, int], radius: int = 1) -> Dict[Tuple[int, int], Dict[str, Any]]:
-        """Get a view of the environment around a position.
-        
-        Args:
-            position: Center (x, y) position
-            radius: Radius of the neighborhood
-            
-        Returns:
-            Dictionary mapping positions to their contents
-        """
-        ...
-        
-    def normalize_position(self, position: Tuple[int, int]) -> Tuple[int, int]:
-        """Normalize a position based on boundary conditions.
-        
-        Args:
-            position: (x, y) position to normalize
-            
-        Returns:
-            Normalized (x, y) position
-        """
-        ...
-```
-
-#### 2. Entity Interface
-
-```python
-# virtuallife/core/entity_interface.py
-from typing import Protocol, Dict, Any, Tuple
-from uuid import UUID
-
-class EntityInterface(Protocol):
-    """Interface defining the entity contract."""
-    
-    id: UUID
-    position: Tuple[int, int]
-    components: Dict[str, Any]
-    
-    def add_component(self, component_name: str, component: Any) -> None:
-        """Add a component to the entity.
-        
-        Args:
-            component_name: Name of the component
-            component: Component instance
-            
-        Raises:
-            ValueError: If a component with this name already exists
-        """
-        ...
-        
-    def has_component(self, component_name: str) -> bool:
-        """Check if the entity has a specific component.
-        
-        Args:
-            component_name: Name of the component
-            
-        Returns:
-            True if the entity has the component
-        """
-        ...
-        
-    def get_component(self, component_name: str) -> Any:
-        """Get a component by name.
-        
-        Args:
-            component_name: Name of the component
-            
-        Returns:
-            Component instance or None
-        """
-        ...
-        
-    def update(self, environment: Any) -> None:
-        """Update the entity state.
-        
-        Args:
-            environment: Environment where the entity exists
-        """
-        ...
-```
-
-### Interface Implementation
-
-Concrete implementations must adhere to these interfaces:
-
-```python
-# virtuallife/core/entity.py
-import uuid
-from typing import Dict, Any, Tuple, Optional
-
 class Entity:
     """Base class for all entities in the simulation."""
     
-    def __init__(self, entity_id: uuid.UUID, position: Tuple[int, int]):
+    def __init__(self, entity_id, position):
         """Initialize a new entity.
         
         Args:
-            entity_id: Unique identifier for the entity
-            position: Initial (x, y) position
+            entity_id (UUID): Unique identifier for the entity
+            position (tuple): Initial (x, y) position
         """
         self.id = entity_id
         self.position = position
-        self.components: Dict[str, Any] = {}
+        self.components = {}
         
-    def add_component(self, component_name: str, component: Any) -> None:
+    def add_component(self, component_name, component):
         """Add a component to the entity.
         
         Args:
-            component_name: Name of the component
+            component_name (str): Name of the component
             component: Component instance
-            
-        Raises:
-            ValueError: If a component with this name already exists
         """
-        if component_name in self.components:
-            raise ValueError(f"Component '{component_name}' already exists")
         self.components[component_name] = component
         
-    def has_component(self, component_name: str) -> bool:
+    def has_component(self, component_name):
         """Check if the entity has a specific component.
         
         Args:
-            component_name: Name of the component
+            component_name (str): Name of the component
             
         Returns:
-            True if the entity has the component
+            bool: True if the entity has the component
         """
         return component_name in self.components
         
-    def get_component(self, component_name: str) -> Optional[Any]:
+    def get_component(self, component_name):
         """Get a component by name.
         
         Args:
-            component_name: Name of the component
+            component_name (str): Name of the component
             
         Returns:
             Component instance or None
         """
         return self.components.get(component_name)
         
-    def update(self, environment: Any) -> None:
+    def update(self, environment):
         """Update the entity state.
         
         Args:
-            environment: Environment where the entity exists
+            environment (Environment): Environment where the entity exists
         """
         for component in self.components.values():
             if hasattr(component, 'update'):
                 component.update(self, environment)
 ```
 
-### File Size Management
-
-To keep files manageable (especially for AI processing):
-
-1. **Split large modules** into focused sub-modules:
-
-```
-virtuallife/core/environment/
-├── __init__.py             # Exports the Environment class
-├── base.py                 # Base Environment class (100-150 lines)
-├── boundary_handlers.py    # Boundary condition implementations (50-100 lines)
-├── entity_container.py     # Entity storage and retrieval (100-150 lines)
-└── resource_manager.py     # Resource handling (100-150 lines)
-```
-
-2. **Extract common utilities** to separate modules:
-
-```python
-# virtuallife/utils/spatial.py
-def manhattan_distance(pos1, pos2):
-    """Calculate Manhattan distance between two positions."""
-    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-    
-def euclidean_distance(pos1, pos2):
-    """Calculate Euclidean distance between two positions."""
-    return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
-    
-def get_neighbors(position, include_diagonals=False):
-    """Get neighboring positions (4 or 8 directions)."""
-        x, y = position
-    neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
-    
-    if include_diagonals:
-        neighbors.extend([(x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)])
-        
-    return neighbors
-```
-
-3. **Use composition over inheritance** to keep class hierarchies shallow
-
-### Component Registry
-
-To facilitate component management and discovery:
-
-```python
-# virtuallife/components/__init__.py
-from typing import Dict, Type, Any
-
-_component_registry: Dict[str, Type[Any]] = {}
-
-def register_component(name: str, component_class: Type[Any]) -> None:
-    """Register a component class.
-    
-    Args:
-        name: Name of the component
-        component_class: Component class
-    """
-    if name in _component_registry:
-        raise ValueError(f"Component '{name}' already registered")
-    _component_registry[name] = component_class
-    
-def get_component_class(name: str) -> Type[Any]:
-    """Get a component class by name.
-    
-    Args:
-        name: Name of the component
-        
-    Returns:
-        Component class
-        
-    Raises:
-        KeyError: If the component is not registered
-    """
-    if name not in _component_registry:
-        raise KeyError(f"Component '{name}' not found")
-    return _component_registry[name]
-    
-def create_component(name: str, **kwargs) -> Any:
-    """Create a component instance.
-    
-    Args:
-        name: Name of the component
-        **kwargs: Arguments for the component constructor
-        
-    Returns:
-        Component instance
-    """
-    component_class = get_component_class(name)
-    return component_class(**kwargs)
-```
-
-### 3. Component
-
-Components add behaviors and properties to entities.
-
-```python
-class Component:
-    """Base class for all entity components."""
-    
-    def update(self, entity, environment):
-        """Update the component state.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        pass  # Implemented by subclasses
-```
-
-Example components:
-
-```python
-class EnergyComponent(Component):
-    """Component representing entity energy."""
-    
-    def __init__(self, initial_energy, decay_rate=0.1):
-        """Initialize the energy component.
-        
-        Args:
-            initial_energy (float): Starting energy value
-            decay_rate (float): Rate at which energy decays per step
-        """
-        self.energy = initial_energy
-        self.decay_rate = decay_rate
-        
-    def update(self, entity, environment):
-        """Update energy level.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        self.energy -= self.decay_rate
-
-class MovementComponent(Component):
-    """Component for entity movement."""
-    
-    def __init__(self, strategy="random"):
-        """Initialize the movement component.
-        
-        Args:
-            strategy (str): Movement strategy ("random", "directed", etc.)
-        """
-        self.strategy = strategy
-        
-    def update(self, entity, environment):
-        """Move the entity.
-        
-        Args:
-            entity (Entity): The entity this component belongs to
-            environment (Environment): The environment
-        """
-        if self.strategy == "random":
-            # Implement random movement
-            dx, dy = random.choice([(-1, 0), (1, 0), (0, -1), (0, 1)])
-            new_position = (entity.position[0] + dx, entity.position[1] + dy)
-            entity.position = environment.normalize_position(new_position)
-```
-
-### 4. Species
-
-The `Species` class serves as a factory for creating entities with specific traits and behaviors.
-
-```python
-class Species:
-    """Template for creating entities with specific traits and behaviors."""
-    
-    def __init__(self, name, traits=None, behaviors=None):
-        """Initialize a new species.
-        
-        Args:
-            name (str): Name of the species
-            traits (dict): Dictionary of traits and their properties
-            behaviors (list): List of behaviors
-        """
-        self.name = name
-        self.traits = traits or {}
-        self.behaviors = behaviors or []
-        
-    def create_entity(self, position, environment):
-        """Create a new entity of this species.
-        
-        Args:
-            position (tuple): Initial (x, y) position
-            environment (Environment): The environment
-            
-        Returns:
-            Entity: A new entity
-        """
-        entity_id = uuid.uuid4()
-        entity = Entity(entity_id, position)
-        
-        # Add trait components
-        for trait_name, trait_values in self.traits.items():
-            value = trait_values["base_value"]
-            if "variation" in trait_values:
-                variation = trait_values["variation"]
-                value += random.uniform(-variation, variation)
-                
-            if trait_name == "energy":
-                component = EnergyComponent(value)
-            # Add other trait types as needed
-            
-            entity.add_component(trait_name, component)
-        
-        # Add behavior components
-        for behavior in self.behaviors:
-            if behavior["name"] == "random_movement":
-                component = MovementComponent("random")
-            # Add other behavior types as needed
-            
-            entity.add_component(behavior["name"], component)
-            
-        return entity
-```
-
-### 5. Simulation
+### 3. Simulation
 
 The `Simulation` class controls time progression and entity updates.
 
@@ -846,6 +592,7 @@ class Simulation:
         self.config = config or {}
         self.current_step = 0
         self.observers = []
+        self.running = False
         
     def add_observer(self, observer):
         """Add an observer to the simulation.
@@ -878,382 +625,392 @@ class Simulation:
             
         self.notify_observers("step_end")
         
-    def run(self, steps=None):
-        """Run the simulation for a specified number of steps.
+    def start(self):
+        """Start the simulation."""
+        self.running = True
         
-        Args:
-            steps (int): Number of steps to run, or None for unlimited
+    def pause(self):
+        """Pause the simulation."""
+        self.running = False
+        
+    def reset(self):
+        """Reset the simulation to its initial state."""
+        # Implementation details
+        
+    def get_current_state(self):
+        """Get the current state of the simulation.
+        
+        Returns:
+            dict: Current simulation state
         """
-        max_steps = steps or self.config.get("max_steps")
-        step_count = 0
+        return {
+            'step': self.current_step,
+            'width': self.environment.width,
+            'height': self.environment.height,
+            'entities': [
+                {
+                    'id': str(entity.id),
+                    'position': entity.position,
+                    'type': entity.__class__.__name__
+                }
+                for entity in self.environment.entities.values()
+            ],
+            'metrics': self.collect_metrics()
+        }
         
-        while max_steps is None or step_count < max_steps:
-            self.step()
-            step_count += 1
+    def collect_metrics(self):
+        """Collect metrics about the current simulation state.
+        
+        Returns:
+            dict: Metrics data
+        """
+        return {
+            'entity_count': len(self.environment.entities),
+            # Other metrics
+        }
 ```
 
-### 6. Visualization
+### 4. SimulationManager
 
-Visualization components render the simulation state.
-
-```python
-class Visualizer:
-    """Base class for visualization components."""
-    
-    def __init__(self, simulation):
-        """Initialize the visualizer.
-        
-        Args:
-            simulation (Simulation): The simulation to visualize
-        """
-        self.simulation = simulation
-        
-    def render(self):
-        """Render the current simulation state."""
-        pass  # Implemented by subclasses
-
-
-class TerminalVisualizer(Visualizer):
-    """Terminal-based visualization."""
-    
-    def render(self):
-        """Render the simulation to the terminal."""
-        environment = self.simulation.environment
-        
-        # Clear screen
-        print("\033c", end="")
-        
-        # Draw grid
-        grid = [[" " for _ in range(environment.width)] for _ in range(environment.height)]
-        
-        # Place entities on grid
-        for entity_id, entity in environment.entities.items():
-            x, y = entity.position
-            grid[y][x] = "X"  # Simple representation
-            
-        # Print grid
-        for row in grid:
-            print("".join(row))
-            
-        print(f"Step: {self.simulation.current_step}")
-```
-
-## Data Collector
-
-The `DataCollector` class collects and analyzes simulation data.
+The `SimulationManager` class manages multiple simulation instances.
 
 ```python
-class DataCollector:
-    """Collects data from the simulation."""
+class SimulationManager:
+    """Manages multiple simulation instances."""
     
     def __init__(self):
-        """Initialize the data collector."""
-        self.data = {
-            "steps": [],
-            "populations": [],
-            "resources": []
-        }
+        """Initialize the simulation manager."""
+        self.simulations = {}
         
-    def on_step_end(self, simulation):
-        """Collect data at the end of a step.
+    def create_simulation(self, config):
+        """Create a new simulation.
         
         Args:
-            simulation (Simulation): The simulation
-        """
-        self.data["steps"].append(simulation.current_step)
-        
-        # Count entities
-        entity_count = len(simulation.environment.entities)
-        self.data["populations"].append(entity_count)
-        
-        # Count resources (simplified)
-        resource_data = {}
-        for resource_type, resource_grid in simulation.environment.resources.items():
-            resource_data[resource_type] = np.sum(resource_grid)
+            config (dict): Simulation configuration
             
-        self.data["resources"].append(resource_data)
-```
-
-## Configuration System
-
-Simulations are configured using a simple dictionary-based system:
-
-```python
-# Example configuration
-config = {
-    "environment": {
-        "width": 100,
-        "height": 100,
-        "boundary_condition": "wrapped"  # "wrapped", "bounded", or "infinite"
-    },
-    "species": [
-        {
-            "name": "SimpleCell",
-            "traits": {
-                "energy": {"base_value": 100, "variation": 10}
-            },
-            "behaviors": [
-                {"name": "random_movement", "priority": 1},
-                {"name": "reproduce", "priority": 2}
-            ],
-            "initial_count": 10
-        }
-    ],
-    "resources": {
-        "food": {
-            "initial_amount": 1000,
-            "regeneration_rate": 0.1
-        }
-    },
-    "simulation": {
-        "max_steps": 1000,
-        "seed": 42
-    }
-}
-```
-
-## Conway's Game of Life Implementation
-
-Conway's Game of Life will be implemented as a specialized configuration:
-
-```python
-def create_conway_simulation(width, height, initial_pattern=None):
-    """Create a Conway's Game of Life simulation.
-    
-    Args:
-        width (int): Width of the grid
-        height (int): Height of the grid
-        initial_pattern (list): List of (x, y) positions for live cells
+        Returns:
+            str: Simulation ID
+        """
+        # Create environment
+        environment = Environment(
+            config.get('width', 50),
+            config.get('height', 50),
+            config.get('boundary_condition', 'wrapped')
+        )
         
-    Returns:
-        Simulation: Configured simulation
-    """
-    # Create environment
-    environment = Environment(width, height, "wrapped")
-    
-    # Create Conway cells at specified positions
-    if initial_pattern:
-        for x, y in initial_pattern:
+        # Create simulation
+        simulation = Simulation(environment, config)
+        
+        # Generate ID
+        simulation_id = str(uuid.uuid4())
+        self.simulations[simulation_id] = simulation
+        
+        # Initialize simulation based on type
+        if config.get('type') == 'predator_prey':
+            self._initialize_predator_prey(simulation, config)
+        
+        return simulation_id
+        
+    def get_simulation(self, simulation_id):
+        """Get a simulation by ID.
+        
+        Args:
+            simulation_id (str): Simulation ID
+            
+        Returns:
+            Simulation: Simulation instance
+        """
+        return self.simulations.get(simulation_id)
+        
+    def get_all_simulations(self):
+        """Get all simulations.
+        
+        Returns:
+            dict: Dictionary of simulation IDs to basic info
+        """
+        return {
+            sim_id: {
+                'id': sim_id,
+                'step': sim.current_step,
+                'running': sim.running,
+                'type': sim.config.get('type', 'custom')
+            }
+            for sim_id, sim in self.simulations.items()
+        }
+        
+    def _initialize_predator_prey(self, simulation, config):
+        """Initialize a predator-prey simulation.
+        
+        Args:
+            simulation (Simulation): Simulation to initialize
+            config (dict): Configuration parameters
+        """
+        # Get configuration parameters with defaults
+        plant_growth_rate = config.get('plant_growth_rate', 0.1)
+        initial_plants = config.get('initial_plants', 100)
+        initial_herbivores = config.get('initial_herbivores', 20)
+        initial_predators = config.get('initial_predators', 5)
+        
+        width = simulation.environment.width
+        height = simulation.environment.height
+        
+        # Add plants (static resource entities)
+        for _ in range(initial_plants):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            
             entity_id = uuid.uuid4()
-            entity = Entity(entity_id, (x, y))
-            entity.add_component("conway", ConwayComponent())
-            environment.add_entity(entity)
-    
-    # Create simulation with Conway-specific rules
-    simulation = ConwaySimulation(environment)
-    
-    return simulation
+            plant = Entity(entity_id, (x, y))
+            plant.add_component('plant', PlantComponent(growth_rate=plant_growth_rate))
+            simulation.environment.add_entity(plant)
+        
+        # Add herbivores
+        for _ in range(initial_herbivores):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            
+            entity_id = uuid.uuid4()
+            herbivore = Entity(entity_id, (x, y))
+            herbivore.add_component('energy', EnergyComponent(initial_energy=100, decay_rate=0.5))
+            herbivore.add_component('movement', MovementComponent(speed=1))
+            herbivore.add_component('herbivore', HerbivoreComponent())
+            herbivore.add_component('reproduction', ReproductionComponent(
+                threshold=120, offspring_energy=50, chance=0.05))
+            simulation.environment.add_entity(herbivore)
+        
+        # Add predators
+        for _ in range(initial_predators):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            
+            entity_id = uuid.uuid4()
+            predator = Entity(entity_id, (x, y))
+            predator.add_component('energy', EnergyComponent(initial_energy=150, decay_rate=0.7))
+            predator.add_component('movement', MovementComponent(speed=1.5))
+            predator.add_component('predator', PredatorComponent())
+            predator.add_component('reproduction', ReproductionComponent(
+                threshold=200, offspring_energy=80, chance=0.03))
+            simulation.environment.add_entity(predator)
+```
 
+## Predator-Prey Implementation
 
-class ConwayComponent(Component):
-    """Component for Conway's Game of Life cells."""
+The predator-prey ecosystem will be implemented with components for different entity types:
+
+```python
+class PlantComponent:
+    """Component for plants that can grow and be consumed."""
     
+    def __init__(self, growth_rate=0.1, max_energy=100):
+        """Initialize a plant component.
+        
+        Args:
+            growth_rate (float): Rate at which the plant grows energy
+            max_energy (float): Maximum energy the plant can store
+        """
+        self.growth_rate = growth_rate
+        self.max_energy = max_energy
+        self.energy = max_energy / 2  # Start at half capacity
+        
     def update(self, entity, environment):
-        """Apply Conway's Game of Life rules.
+        """Update the plant's energy.
         
         Args:
             entity (Entity): The entity this component belongs to
             environment (Environment): The environment
         """
-        # Conway's rules will be applied by the simulation
-        pass
+        # Plants grow over time up to their maximum energy
+        self.energy = min(self.energy + self.growth_rate, self.max_energy)
 
 
-class ConwaySimulation(Simulation):
-    """Specialized simulation for Conway's Game of Life."""
+class EnergyComponent:
+    """Component representing an entity's energy level."""
     
-    def step(self):
-        """Execute a single Conway step."""
-        self.current_step += 1
-        self.notify_observers("step_start")
+    def __init__(self, initial_energy=100, decay_rate=0.1):
+        """Initialize an energy component.
         
-        # Get current state
-        live_cells = set()
-        for entity_id, entity in self.environment.entities.items():
-            live_cells.add(entity.position)
+        Args:
+            initial_energy (float): Starting energy level
+            decay_rate (float): Rate at which energy decays per step
+        """
+        self.energy = initial_energy
+        self.decay_rate = decay_rate
+        
+    def update(self, entity, environment):
+        """Update the entity's energy.
+        
+        Args:
+            entity (Entity): The entity this component belongs to
+            environment (Environment): The environment
+        """
+        # Energy decreases over time
+        self.energy -= self.decay_rate
+        
+        # If energy is depleted, the entity dies
+        if self.energy <= 0:
+            environment.remove_entity(entity.id)
+
+
+class MovementComponent:
+    """Component allowing an entity to move."""
+    
+    def __init__(self, speed=1.0):
+        """Initialize a movement component.
+        
+        Args:
+            speed (float): Movement speed
+        """
+        self.speed = speed
+        
+    def update(self, entity, environment):
+        """Move the entity.
+        
+        Args:
+            entity (Entity): The entity this component belongs to
+            environment (Environment): The environment
+        """
+        # Only move if the entity has energy
+        if entity.has_component('energy'):
+            energy = entity.get_component('energy')
+            if energy.energy <= 0:
+                return
+                
+            # Movement costs energy
+            energy.energy -= 0.1 * self.speed
             
-        # Calculate next state
-        next_gen_lives = set()
-        neighbors_count = {}
-        
-        # Count neighbors for each cell and its neighbors
-        for cell in live_cells:
-            x, y = cell
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    if dx == 0 and dy == 0:
-                        continue
-                        
-                    neighbor = self.environment.normalize_position((x + dx, y + dy))
-                    neighbors_count[neighbor] = neighbors_count.get(neighbor, 0) + 1
-        
-        # Apply Conway's rules
-        for cell, count in neighbors_count.items():
-            # Rule 1: Live cell with 2 or 3 neighbors survives
-            if cell in live_cells and (count == 2 or count == 3):
-                next_gen_lives.add(cell)
-                
-            # Rule 2: Dead cell with exactly 3 neighbors becomes alive
-            elif cell not in live_cells and count == 3:
-                next_gen_lives.add(cell)
-                
-        # Update environment with new state
-        # Remove dead cells
-        entities_to_remove = []
-        for entity_id, entity in self.environment.entities.items():
-            if entity.position not in next_gen_lives:
-                entities_to_remove.append(entity_id)
-                
-        for entity_id in entities_to_remove:
-            self.environment.remove_entity(entity_id)
+            # Move in a random direction
+            dx = random.choice([-1, 0, 1])
+            dy = random.choice([-1, 0, 1])
             
-        # Add new cells
-        for position in next_gen_lives:
-            if not self.environment.get_entities_at(position):
-                entity_id = uuid.uuid4()
-                entity = Entity(entity_id, position)
-                entity.add_component("conway", ConwayComponent())
-                self.environment.add_entity(entity)
+            # Calculate new position
+            x, y = entity.position
+            new_x = x + dx
+            new_y = y + dy
+            
+            # Update position with boundary normalization
+            entity.position = environment.normalize_position((new_x, new_y))
+
+
+class HerbivoreComponent:
+    """Component for herbivores that eat plants."""
+    
+    def update(self, entity, environment):
+        """Look for and consume plants.
+        
+        Args:
+            entity (Entity): The entity this component belongs to
+            environment (Environment): The environment
+        """
+        if not entity.has_component('energy'):
+            return
+            
+        # Check current position for plants
+        entities_here = environment.get_entities_at(entity.position)
+        for other_entity in entities_here:
+            if other_entity.id != entity.id and other_entity.has_component('plant'):
+                plant = other_entity.get_component('plant')
                 
-        self.notify_observers("step_end")
-```
+                # Consume some of the plant's energy
+                consumed = min(plant.energy, 10)
+                plant.energy -= consumed
+                
+                # Convert to herbivore energy
+                entity.get_component('energy').energy += consumed * 0.8
+                
+                # If plant is depleted, remove it
+                if plant.energy <= 0:
+                    environment.remove_entity(other_entity.id)
+                    
+                # Stop after eating one plant
+                break
 
-## Testing Strategy
 
-The project will follow a comprehensive testing approach:
-
-### 1. Unit Tests
-
-Test individual components in isolation:
-
-```python
-# Example unit test for Environment
-def test_environment_add_entity():
-    env = Environment(10, 10)
-    entity = Entity(uuid.uuid4(), (5, 5))
+class PredatorComponent:
+    """Component for predators that hunt herbivores."""
     
-    env.add_entity(entity)
-    
-    assert len(env.entities) == 1
-    assert entity.id in env.entities
-    assert (5, 5) in env.entity_positions
-    assert entity.id in env.entity_positions[(5, 5)]
-```
-
-### 2. Integration Tests
-
-Test interactions between components:
-
-```python
-# Example integration test for Entity and Component interaction
-def test_entity_component_integration():
-    env = Environment(10, 10)
-    entity = Entity(uuid.uuid4(), (5, 5))
-    entity.add_component("energy", EnergyComponent(100, 0.1))
-    
-    env.add_entity(entity)
-    entity.update(env)
-    
-    assert entity.get_component("energy").energy == 99.9
-```
-
-### 3. Functional Tests
-
-Test complete simulation scenarios:
-
-```python
-# Example functional test for Conway's Game of Life
-def test_conway_blinker_pattern():
-    # Create a blinker pattern (vertical line of 3 cells)
-    initial_pattern = [(5, 4), (5, 5), (5, 6)]
-    sim = create_conway_simulation(10, 10, initial_pattern)
-    
-    # After one step, should become a horizontal line
-    sim.step()
-    
-    live_cells = set()
-    for entity_id, entity in sim.environment.entities.items():
-        live_cells.add(entity.position)
+    def update(self, entity, environment):
+        """Look for and hunt herbivores.
         
-    assert (4, 5) in live_cells
-    assert (5, 5) in live_cells
-    assert (6, 5) in live_cells
-    assert len(live_cells) == 3
-```
+        Args:
+            entity (Entity): The entity this component belongs to
+            environment (Environment): The environment
+        """
+        if not entity.has_component('energy'):
+            return
+            
+        # Check current position for herbivores
+        entities_here = environment.get_entities_at(entity.position)
+        for other_entity in entities_here:
+            if other_entity.id != entity.id and other_entity.has_component('herbivore'):
+                if other_entity.has_component('energy'):
+                    herbivore_energy = other_entity.get_component('energy')
+                    
+                    # Transfer energy from prey to predator
+                    consumed = herbivore_energy.energy
+                    entity.get_component('energy').energy += consumed * 0.6
+                    
+                    # Remove the consumed herbivore
+                    environment.remove_entity(other_entity.id)
+                    
+                    # Stop after eating one herbivore
+                    break
 
-## Implementation Details
 
-### Configuration Loading
-
-```python
-def load_config(config_path):
-    """Load configuration from a YAML file.
+class ReproductionComponent:
+    """Component allowing entities to reproduce."""
     
-    Args:
-        config_path (str): Path to the YAML file
+    def __init__(self, threshold=100, offspring_energy=50, chance=0.05):
+        """Initialize a reproduction component.
         
-    Returns:
-        dict: Configuration dictionary
-    """
-    with open(config_path, 'r') as file:
-        return yaml.safe_load(file)
-```
-
-### Running Simulations
-
-```python
-def run_simulation(config):
-    """Create and run a simulation from configuration.
-    
-    Args:
-        config (dict): Configuration dictionary
+        Args:
+            threshold (float): Energy threshold required for reproduction
+            offspring_energy (float): Energy given to offspring
+            chance (float): Probability of reproduction per step when above threshold
+        """
+        self.threshold = threshold
+        self.offspring_energy = offspring_energy
+        self.chance = chance
         
-    Returns:
-        Simulation: The completed simulation
-    """
-    # Set random seed if provided
-    if "seed" in config.get("simulation", {}):
-        random.seed(config["simulation"]["seed"])
+    def update(self, entity, environment):
+        """Check conditions and possibly reproduce.
         
-    # Create environment
-    env_config = config.get("environment", {})
-    environment = Environment(
-        env_config.get("width", 100),
-        env_config.get("height", 100),
-        env_config.get("boundary_condition", "wrapped")
-    )
-    
-    # Create species
-    species_dict = {}
-    for species_config in config.get("species", []):
-        species = Species(
-            species_config["name"],
-            species_config.get("traits"),
-            species_config.get("behaviors")
-        )
-        species_dict[species.name] = species
+        Args:
+            entity (Entity): The entity this component belongs to
+            environment (Environment): The environment
+        """
+        if not entity.has_component('energy'):
+            return
+            
+        energy = entity.get_component('energy')
         
-        # Create initial entities
-        for _ in range(species_config.get("initial_count", 0)):
-            x = random.randint(0, environment.width - 1)
-            y = random.randint(0, environment.height - 1)
-            entity = species.create_entity((x, y), environment)
-            environment.add_entity(entity)
-    
-    # Create simulation
-    simulation = Simulation(environment, config.get("simulation"))
-    
-    # Add data collector
-    data_collector = DataCollector()
-    simulation.add_observer(data_collector)
-    
-    # Run simulation
-    simulation.run()
-    
-    return simulation, data_collector.data
+        # Only reproduce if enough energy is available
+        if energy.energy >= self.threshold and random.random() < self.chance:
+            # Create offspring (copy of parent)
+            offspring_id = uuid.uuid4()
+            offspring = Entity(offspring_id, entity.position)
+            
+            # Copy components (simplified version)
+            for name, component in entity.components.items():
+                if name == 'energy':
+                    # Offspring gets a new energy component
+                    offspring.add_component('energy', EnergyComponent(
+                        initial_energy=self.offspring_energy,
+                        decay_rate=component.decay_rate
+                    ))
+                else:
+                    # Other components are simply copied
+                    offspring.add_component(name, copy.deepcopy(component))
+            
+            # Parent loses energy to offspring
+            energy.energy -= self.offspring_energy
+            
+            # Add offspring to environment
+            environment.add_entity(offspring)
 ```
 
 ## Command-Line Interface
+
+The command-line interface will support running the predator-prey simulation:
 
 ```python
 @click.group()
@@ -1263,65 +1020,118 @@ def cli():
 
 
 @cli.command()
-@click.option("--config", "-c", required=True, help="Path to configuration file")
-@click.option("--output", "-o", help="Path to output file")
-def run(config, output):
-    """Run a simulation using the specified configuration."""
-    config_dict = load_config(config)
-    simulation, data = run_simulation(config_dict)
-    
-    if output:
-        # Save results
-        with open(output, 'w') as f:
-            json.dump(data, f, indent=2)
+@click.option("--host", default="0.0.0.0", help="Host to bind the web server")
+@click.option("--port", "-p", default=5000, help="Port to bind the web server")
+@click.option("--debug", is_flag=True, help="Run in debug mode")
+def web(host, port, debug):
+    """Start the web interface."""
+    from virtuallife.web.app import run_app
+    run_app(host=host, port=port, debug=debug)
 
 
 @cli.command()
 @click.option("--width", "-w", default=50, help="Width of the grid")
 @click.option("--height", "-h", default=50, help="Height of the grid")
-@click.option("--pattern", "-p", default="random", help="Initial pattern (random, blinker, glider)")
-@click.option("--steps", "-s", default=100, help="Number of steps to simulate")
-def conway(width, height, pattern, steps):
-    """Run Conway's Game of Life simulation."""
-    if pattern == "random":
-        # Create random initial pattern
-        initial_pattern = []
-        for _ in range(width * height // 4):  # 25% cell coverage
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            initial_pattern.append((x, y))
-    elif pattern == "blinker":
-        # Create blinker pattern
-        center_x, center_y = width // 2, height // 2
-        initial_pattern = [(center_x, center_y - 1), (center_x, center_y), (center_x, center_y + 1)]
-    elif pattern == "glider":
-        # Create glider pattern
-        center_x, center_y = width // 2, height // 2
-        initial_pattern = [
-            (center_x, center_y - 1),
-            (center_x + 1, center_y),
-            (center_x - 1, center_y + 1),
-            (center_x, center_y + 1),
-            (center_x + 1, center_y + 1)
-        ]
-    else:
-        print(f"Unknown pattern: {pattern}")
-        return
+@click.option("--plant-growth", "-p", default=0.1, help="Plant growth rate")
+@click.option("--herbivore-count", default=20, help="Initial number of herbivores")
+@click.option("--predator-count", default=5, help="Initial number of predators")
+@click.option("--steps", "-s", default=1000, help="Number of steps to simulate")
+@click.option("--web", is_flag=True, help="Open in web interface")
+def predator_prey(width, height, plant_growth, herbivore_count, predator_count, steps, web):
+    """Run a predator-prey simulation."""
+    if web:
+        # Start web server with predator-prey configuration
+        from virtuallife.web.app import run_app
+        import webbrowser
+        import threading
+        import json
         
-    # Create and run simulation
-    simulation = create_conway_simulation(width, height, initial_pattern)
+        # Start web server in a separate thread
+        threading.Thread(target=run_app, kwargs={'port': 5000, 'debug': False}, daemon=True).start()
+        
+        # Open browser with predator-prey configuration
+        url = f"http://localhost:5000/?config={json.dumps({
+            'type': 'predator_prey',
+            'width': width,
+            'height': height,
+            'plant_growth_rate': plant_growth,
+            'initial_plants': width * height // 10,  # ~10% coverage
+            'initial_herbivores': herbivore_count,
+            'initial_predators': predator_count
+        })}"
+        webbrowser.open(url)
+        
+        # Keep main thread alive
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Web server stopped")
+    else:
+        # Create and run simulation in terminal (simplified version)
+        print("Terminal-based visualization is deprecated. Please use --web flag for web interface.")
+        print("Continuing with simplified output...")
+        
+        # Create environment and simulation
+        environment = Environment(width, height)
+        simulation = Simulation(environment)
+        
+        # Initialize with predator-prey configuration
+        config = {
+            'plant_growth_rate': plant_growth,
+            'initial_plants': width * height // 10,
+            'initial_herbivores': herbivore_count,
+            'initial_predators': predator_count
+        }
+        SimulationManager()._initialize_predator_prey(simulation, config)
+        
+        # Run simulation with basic output
+        for _ in range(steps):
+            # Count entities by type
+            plants = sum(1 for e in environment.entities.values() if e.has_component('plant'))
+            herbivores = sum(1 for e in environment.entities.values() if e.has_component('herbivore'))
+            predators = sum(1 for e in environment.entities.values() if e.has_component('predator'))
+            
+            print(f"Step {simulation.current_step}: Plants={plants}, Herbivores={herbivores}, Predators={predators}")
+            simulation.step()
+
+
+@cli.command()
+@click.option("--config", "-c", required=True, help="Path to configuration file")
+@click.option("--output", "-o", help="Path to output file")
+@click.option("--web", is_flag=True, help="Open in web interface")
+def run(config, output, web):
+    """Run a simulation using the specified configuration."""
+    config_dict = load_config(config)
     
-    # Add visualizer
-    visualizer = TerminalVisualizer(simulation)
-    
-    # Run with visualization
-    for _ in range(steps):
-        visualizer.render()
-        simulation.step()
-        time.sleep(0.1)  # Pause between steps
-    
-    # Final render
-    visualizer.render()
+    if web:
+        # Start web server with configuration
+        from virtuallife.web.app import run_app
+        import webbrowser
+        import threading
+        import json
+        
+        # Start web server in a separate thread
+        threading.Thread(target=run_app, kwargs={'port': 5000, 'debug': False}, daemon=True).start()
+        
+        # Open browser with configuration
+        url = f"http://localhost:5000/?config={json.dumps(config_dict)}"
+        webbrowser.open(url)
+        
+        # Keep main thread alive
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Web server stopped")
+    else:
+        # Run simulation and save results
+        simulation, data = run_simulation(config_dict)
+        
+        if output:
+            # Save results
+            with open(output, 'w') as f:
+                json.dump(data, f, indent=2)
 
 
 if __name__ == "__main__":
@@ -1330,4 +1140,6 @@ if __name__ == "__main__":
 
 ## Conclusion
 
-This technical specification provides a simplified but comprehensive blueprint for implementing the VirtualLife project. The focus is on creating a clear, modular architecture that can be incrementally enhanced through the phases outlined in the roadmap. 
+This technical specification provides a blueprint for implementing the VirtualLife project with a web-based interface and a predator-prey ecosystem as the first implementation example. The focus is on creating a clear, modular architecture that can be incrementally enhanced through the phases outlined in the roadmap.
+
+The predator-prey ecosystem provides a richer first implementation than a simple cellular automaton, showcasing more of the system's capabilities including resource management, entity behaviors, and population dynamics. The web interface will make the platform accessible to a wide audience, while the modular design will allow for continuous improvement and extension. 

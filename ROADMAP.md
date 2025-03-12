@@ -4,7 +4,7 @@
 
 VirtualLife is an artificial life simulator designed to model the emergence of complex behaviors from simple rules. Unlike detailed biological simulations, VirtualLife focuses on computational generations/turns within a virtual environment, starting with simple cells and parameterized rules to observe emergent patterns and behaviors.
 
-The project aims to create a flexible framework capable of simulating scenarios ranging from Conway's Game of Life to complex ecological systems featuring predator-prey relationships, mutualism, and other emergent behaviors.
+The project aims to create a flexible framework capable of simulating scenarios ranging from simple predator-prey ecosystems to complex ecological systems featuring mutualism, territorial behaviors, and other emergent phenomena.
 
 ## Technical Vision
 
@@ -21,7 +21,8 @@ The project aims to create a flexible framework capable of simulating scenarios 
 
 - **Primary Language**: Python 3.10+
 - **Core Libraries**: NumPy/SciPy for vectorized operations
-- **Visualization**: Matplotlib (basic), Pygame (interactive), potential for web-based visualization later
+- **Web Framework**: Flask with Flask-SocketIO for real-time communication
+- **Visualization**: D3.js for interactive web visualization
 - **Testing**: Pytest for unit and integration tests, Hypothesis for property-based testing
 - **Documentation**: Google-style docstrings
 - **Package Management**: Poetry for dependency management
@@ -29,9 +30,9 @@ The project aims to create a flexible framework capable of simulating scenarios 
 
 ## Simplified Roadmap
 
-### Phase 1: Core Simulation Framework (Weeks 1-3)
+### Phase 1: Core Simulation Framework with Web Interface (Weeks 1-4)
 
-**Goal**: Create the foundational simulation system and implement Conway's Game of Life as proof of concept.
+**Goal**: Create the foundational simulation system with a web interface and implement a simple predator-prey ecosystem as proof of concept.
 
 #### Development Approach:
 - **Test-First Development**: Every module must have comprehensive tests before implementation
@@ -51,21 +52,30 @@ The project aims to create a flexible framework capable of simulating scenarios 
     - [ ] Test coverage: min 90%
     - [ ] Should handle wrapped, bounded, and infinite boundaries
     - [ ] Entity positioning and tracking
+    - [ ] Resource generation and distribution
   - [ ] `Entity`: Component-based entities
     - [ ] Test coverage: min 90%
     - [ ] Component management system
     - [ ] Position tracking
+    - [ ] Basic attributes (energy, age)
   - [ ] `Simulation`: Controls time progression and updates
     - [ ] Test coverage: min 90%
     - [ ] Step-by-step execution
     - [ ] Observer pattern for monitoring
-  - [ ] `Visualizer`: Renders simulation state to terminal
-    - [ ] Test coverage: min 80%
-    - [ ] Clear terminal representation
-- [ ] Conway's Game of Life implementation
+- [ ] Web interface components:
+  - [ ] Basic Flask application structure
+  - [ ] WebSocket communication for real-time updates
+  - [ ] Grid visualization using HTML5 Canvas or SVG
+  - [ ] Basic simulation controls (start, stop, step, reset)
+  - [ ] Configuration form for simulation parameters
+- [ ] Predator-Prey Ecosystem implementation
   - [ ] Test coverage: min 90%
-  - [ ] Tests for all known patterns (blinker, glider, etc.)
-  - [ ] Property-based tests for Conway's rules
+  - [ ] Plants (static resource entities)
+  - [ ] Herbivores (consume plants)
+  - [ ] Predators (consume herbivores)
+  - [ ] Energy metabolism
+  - [ ] Basic movement strategies
+  - [ ] Simple reproduction mechanics
 - [ ] Basic configuration system (YAML-based)
   - [ ] Test coverage: min 90%
   - [ ] Tests for valid and invalid configurations
@@ -75,45 +85,53 @@ The project aims to create a flexible framework capable of simulating scenarios 
 
 **Acceptance Criteria**:
 - All tests pass with minimum 90% overall coverage
-- Implementation of Conway's Game of Life matches expected patterns
-- Terminal visualization shows simulation state correctly
+- Implementation of Predator-Prey system shows expected population dynamics
+- Web interface correctly displays simulation state with different entity types
+- Web interface allows basic control of simulation
 - Configuration can be loaded from YAML files
 - All modules adhere to the file size limits and interface contracts
 - No circular dependencies between modules
 
 **Phase 1 Milestones**:
 1. Week 1: Interface definitions and initial test framework
-2. Week 2: Core implementation and Conway's rules
-3. Week 3: Visualization, configuration, CLI and final testing
+2. Week 2: Core implementation and entity components
+3. Week 3: Basic web interface structure and visualization
+4. Week 4: Web controls, configuration, and final testing
 
-### Phase 2: Resources and Simple Behaviors (Weeks 4-6)
+### Phase 2: Resources and Simple Behaviors (Weeks 5-7)
 
-**Goal**: Add resources, basic entity behaviors, and enhanced visualization.
+**Goal**: Add more advanced resources, entity behaviors, and enhanced web visualization.
 
 #### Deliverables:
-- [ ] Resource system:
-  - [ ] Resource generation and distribution
-  - [ ] Resource consumption by entities
-- [ ] Component-based entity system:
-  - [ ] Trait components (energy, age, etc.)
-  - [ ] Behavior components
-- [ ] Basic behaviors:
-  - [ ] Random movement
-  - [ ] Gradient following
-  - [ ] Simple reproduction
-- [ ] Enhanced visualization:
-  - [ ] Basic GUI with Pygame
-  - [ ] Entity and resource rendering
-  - [ ] Simple controls (pause, step, speed)
-- [ ] Data collection system (populations, resources)
+- [ ] Enhanced resource system:
+  - [ ] Multiple resource types
+  - [ ] Resource consumption efficiency
+  - [ ] Environmental factors affecting resource growth
+- [ ] Expanded component-based entity system:
+  - [ ] Additional trait components (speed, perception, etc.)
+  - [ ] More behavior components
+- [ ] Advanced behaviors:
+  - [ ] Smart movement (pathfinding, obstacle avoidance)
+  - [ ] Predator hunting strategies
+  - [ ] Prey escape behaviors
+  - [ ] Improved reproduction strategies
+- [ ] Enhanced web visualization:
+  - [ ] Entity and resource rendering with different colors/shapes
+  - [ ] Interactive controls (pause, step, speed)
+  - [ ] Zoom and pan capabilities
+- [ ] Data collection system:
+  - [ ] Population statistics
+  - [ ] Resource distribution charts
+  - [ ] Real-time data visualization in web interface
 
 **Acceptance Criteria**:
-- Entities can move, consume resources, and reproduce
-- Resource distribution and regeneration works correctly
-- GUI visualization correctly renders entities and resources
+- Entities exhibit more sophisticated behaviors
+- Resource distribution and regeneration has more realistic patterns
+- Web visualization correctly renders entities and resources with distinguishing features
 - Data collection produces accurate time series data
+- Web interface displays real-time statistics
 
-### Phase 3: Species and Simple Genetics (Weeks 7-9)
+### Phase 3: Species and Simple Genetics (Weeks 8-10)
 
 **Goal**: Implement species concept and basic genetic inheritance.
 
@@ -131,14 +149,19 @@ The project aims to create a flexible framework capable of simulating scenarios 
 - [ ] Enhanced data collection:
   - [ ] Species population tracking
   - [ ] Genetic diversity metrics
+- [ ] Web interface enhancements:
+  - [ ] Species configuration panel
+  - [ ] Species statistics and charts
+  - [ ] Visual differentiation of species
 
 **Acceptance Criteria**:
 - Species maintain consistent traits with controlled variation
 - Genetic inheritance and mutation work correctly
 - Population dynamics show expected patterns
 - Data collection accurately tracks species and genetic information
+- Web interface allows species configuration and monitoring
 
-### Phase 4: Advanced Ecology and Analysis (Weeks 10-12)
+### Phase 4: Advanced Ecology and Analysis (Weeks 11-13)
 
 **Goal**: Add more complex ecological dynamics and analysis tools.
 
@@ -154,16 +177,19 @@ The project aims to create a flexible framework capable of simulating scenarios 
   - [ ] Spatial distribution analysis
   - [ ] Simple phylogenetic tracking
 - [ ] Enhanced visualization:
+  - [ ] Environmental factor visualization (heat maps)
   - [ ] Data visualization dashboards
   - [ ] Time controls (rewind, timelapses)
+  - [ ] Simulation state export/import
 
 **Acceptance Criteria**:
 - Environmental factors meaningfully impact entity behaviors
 - Complex interactions produce emergent patterns
 - Analysis tools provide useful insights
 - Visualization system effectively communicates results
+- Users can save and load simulation states
 
-### Phase 5: Advanced Genetics and Evolution (Weeks 13-15)
+### Phase 5: Advanced Genetics and Evolution (Weeks 14-16)
 
 **Goal**: Implement more complex genetic systems and evolutionary dynamics.
 
@@ -180,33 +206,42 @@ The project aims to create a flexible framework capable of simulating scenarios 
   - [ ] Phylogenetic tree visualization
   - [ ] Genetic drift analysis
   - [ ] Selection pressure analysis
+- [ ] Web interface enhancements:
+  - [ ] Interactive phylogenetic tree
+  - [ ] Genetic visualization tools
+  - [ ] Advanced simulation parameter controls
 
 **Acceptance Criteria**:
 - Genetic system produces realistic inheritance patterns
 - Evolutionary mechanisms lead to appropriate adaptations
 - Analysis tools accurately track evolutionary changes
 - System can model and visualize long-term evolutionary patterns
+- Web interface provides comprehensive visualization of genetic data
 
 ## Technical Implementation
 
-Each phase will follow these implementation principles:
+### Web Interface Architecture
 
-1. **Start Simple**: Begin with the minimal implementation needed
-2. **Test Thoroughly**: Develop tests alongside features
-3. **Refactor Early**: Continuously improve code structure
-4. **Document Clearly**: Maintain clear documentation for APIs
+The web interface will be built using Flask and Flask-SocketIO with the following components:
 
-## Implementation Schedule
+1. **Server-Side Components**:
+   - Flask application for serving web pages and API endpoints
+   - Flask-SocketIO for real-time communication
+   - Simulation manager for handling multiple simulation instances
+   - Data collection and processing for visualization
 
-The implementation will follow a weekly sprint approach:
+2. **Client-Side Components**:
+   - HTML5/CSS3 for page structure and styling
+   - JavaScript with D3.js for visualization
+   - Socket.IO client for real-time updates
+   - Form handling for simulation configuration
 
-1. **Planning**: Define specific tasks for the sprint
-2. **Implementation**: Develop the planned features
-3. **Testing**: Validate the implementation
-4. **Review**: Assess progress and adjust plans as needed
-5. **Demo**: Create working examples of new features
-
-## Technical Specifications
+3. **Communication Flow**:
+   - Initial page load: Server renders template with basic structure
+   - WebSocket connection established for real-time updates
+   - Client sends commands (start, stop, step, etc.)
+   - Server processes commands and sends simulation state updates
+   - Client renders updates in real-time
 
 ### Core Components
 
@@ -275,72 +310,21 @@ The implementation will follow a weekly sprint approach:
 - Deterministic random number generation for reproducibility
 - Checkpointing system for state management
 
-#### 5. Genetic System
+#### 5. Web Visualization
 
-**Description**: Systems for representing and manipulating genetic information.
-
-**Key Features**:
-- Genotype representation (genome structure)
-- Phenotype expression (trait mapping)
-- Mutation and recombination mechanisms
-- Inheritance patterns
-
-**Technical Implementation**:
-- Flexible genome representation (bit strings, vectors, trees, etc.)
-- Expression mapping functions for genotype-to-phenotype conversion
-- Customizable mutation operators
-- Genetic algorithm components for selection and reproduction
-
-#### 6. Analysis System
-
-**Description**: Tools for collecting and analyzing simulation data.
+**Description**: System for rendering simulation state in a web browser.
 
 **Key Features**:
-- Time-series data collection
-- Population statistics
-- Spatial analysis
-- Evolutionary tracking
-- Pattern recognition
-
-**Technical Implementation**:
-- Observer pattern for non-invasive data collection
-- Pandas integration for data manipulation
-- Statistical analysis using Scipy
-- Visualization pipeline using Matplotlib/Seaborn
-- Machine learning integration for pattern detection
-
-#### 7. Visualization System
-
-**Description**: Components for rendering simulation state and analysis results.
-
-**Key Features**:
-- Real-time visualization of simulation
+- Real-time grid visualization
+- Entity and resource rendering
 - Interactive controls
 - Data visualization dashboards
-- Replay capabilities
 
 **Technical Implementation**:
-- Modular rendering system with multiple backends
-- Terminal visualization using ANSI/Unicode
-- 2D rendering with Pygame for desktop
-- Web-based visualization using Plotly/D3.js
-
-#### 8. Concurrent Simulation Management
-
-**Description**: System for managing multiple simulation instances.
-
-**Key Features**:
-- Parameter sweep coordination
-- Distributed simulation control
-- Results aggregation
-- Comparative analysis
-
-**Technical Implementation**:
-- Task queue system for job management
-- Worker pool for parallel execution
-- Data synchronization mechanisms
-- Centralized result storage
-- Statistical analysis tools for cross-simulation comparisons
+- HTML5 Canvas or SVG for grid rendering
+- D3.js for data visualization
+- WebSocket for real-time updates
+- Responsive design for different screen sizes
 
 ### Data Structures
 
@@ -410,26 +394,7 @@ species = {
 }
 ```
 
-#### 4. Genome Structure
-```python
-# Conceptual structure
-genome = {
-    'chromosome_pairs': [
-        (chromosome_a, chromosome_b),  # For diploid organisms
-    ],
-    'expression_rules': {
-        'trait_name': callable,  # Function mapping genes to phenotypic trait
-    },
-    'mutation_rates': {
-        'point': float,
-        'insertion': float,
-        'deletion': float,
-        'crossover': float,
-    }
-}
-```
-
-#### 5. Simulation Data
+#### 4. Simulation Data
 ```python
 # Conceptual structure
 simulation_data = {
@@ -504,75 +469,25 @@ get_phylogenetic_tree() -> PhylogeneticTree
 export_data(format: str = 'csv') -> str
 ```
 
-#### 5. Visualization API
+#### 5. Web API
 ```python
-# Visualization methods
-render_frame() -> Image
-update_display() -> None
-generate_chart(metric: str, time_range: tuple = None) -> Chart
-create_animation(start: int, end: int, fps: int = 30) -> Animation
+# Web API endpoints
+GET /api/simulations - List all simulations
+POST /api/simulations - Create a new simulation
+GET /api/simulations/{id} - Get simulation details
+PUT /api/simulations/{id}/control - Control simulation (start, stop, step)
+GET /api/simulations/{id}/state - Get current simulation state
+GET /api/simulations/{id}/metrics - Get simulation metrics
 ```
 
-#### 6. Concurrent Simulation API
+#### 6. WebSocket Events
 ```python
-# Concurrent simulation methods
-create_parameter_sweep(base_config: SimulationConfig, parameter_ranges: Dict) -> SimulationBatch
-run_batch(batch: SimulationBatch, max_workers: int = None) -> BatchResults
-compare_results(results: List[SimulationResult], metrics: List[str]) -> ComparisonResult
-aggregate_statistics(results: List[SimulationResult]) -> StatisticalSummary
+# WebSocket events
+simulation_state_update - Sent when simulation state changes
+simulation_metrics_update - Sent when metrics are updated
+simulation_control_response - Sent in response to control commands
+simulation_error - Sent when an error occurs
 ```
-
-## Implementation Considerations
-
-### Performance Optimization Strategies
-
-1. **Spatial Partitioning**
-   - Implement grid-based spatial hashing for efficient entity interactions
-   - Only compute interactions between entities in adjacent partitions
-
-2. **Vectorized Operations**
-   - Use Numpy for bulk entity updates where possible
-   - Implement batch processing for similar entities
-
-3. **Lazy Evaluation**
-   - Only compute values when needed
-   - Cache results of expensive calculations
-
-4. **Parallel Processing**
-   - Implement optional multiprocessing for independent entity updates
-   - Consider GPU acceleration for large simulations
-
-### Scalability Considerations
-
-1. **Memory Management**
-   - Implement entity pooling to reduce garbage collection overhead
-   - Use compact data representations for entities
-   - Implement streaming for large simulation outputs
-
-2. **Large Simulations**
-   - Design for sparse representation of large environments
-   - Implement level-of-detail mechanisms for entity updates
-   - Consider out-of-core processing for very large simulations
-
-3. **Long-Running Simulations**
-   - Implement checkpointing for crash recovery
-   - Design for minimal memory growth over time
-   - Add monitoring for simulation health
-
-### Cross-Platform Compatibility
-
-1. **Core Engine**
-   - Pure Python implementation for maximum compatibility
-   - Optional optimized components with fallbacks
-
-2. **Visualization**
-   - Terminal-based fallback for all platforms
-   - Desktop GUI with cross-platform compatibility
-   - Web interface for platform-independent access
-
-3. **Data Storage**
-   - Cross-platform file formats (HDF5, SQLite)
-   - Cloud-compatible storage options
 
 ## Testing Strategy
 
@@ -597,70 +512,16 @@ aggregate_statistics(results: List[SimulationResult]) -> StatisticalSummary
 - Test performance under various loads
 - Verify deterministic behavior with fixed random seeds
 
-### Scientific Validation
+### Web Interface Testing
 
-- Implement benchmark simulations with known solutions
-- Compare results with theoretical predictions where possible
-- Validate emergent behaviors against established models
-- Perform sensitivity analysis for key parameters
-
-## Documentation Requirements
-
-### Code Documentation
-
-- Google-style docstrings for all public APIs
-- Architecture diagrams for major components
-- Algorithm descriptions for non-trivial implementations
-- Performance characteristics and constraints
-
-### User Documentation
-
-- Installation and setup guide
-- Tutorial for creating simple simulations
-- Configuration reference
-- API reference for extending the system
-- Examples of common scenarios
-
-### Scientific Documentation
-
-- Description of implemented models and their limitations
-- Validation methodology and results
-- Guidelines for interpreting simulation results
-- References to relevant literature
-
-## Future Extensions
-
-### Additional Simulation Features
-
-- 3D spatial environment
-- Advanced sensory systems
-- Neural network-based entity decision making
-- Social structures and communication
-- Advanced genetic algorithms
-
-### Enhanced Visualization
-
-- Virtual reality visualization
-- Interactive entity inspection
-- Real-time parameter adjustment
-- Cinematic rendering for demonstrations
-
-### Cloud Integration
-
-- Distributed simulation processing
-- Shared simulation repository
-- Collaborative simulation design
-- Public API for external applications
-
-### Mobile Applications
-
-- Simulation viewer for Android/iOS
-- Simple simulation setup and control
-- Notification for interesting emergent events
-- Offline simulation running
+- Test API endpoints
+- Verify WebSocket communication
+- Test browser compatibility
+- Validate responsive design
+- Test user interactions
 
 ## Conclusion
 
-VirtualLife aims to create a flexible, extensible platform for artificial life simulation with a focus on emergent behaviors. By following this roadmap, the project will evolve from a simple cellular automaton to a sophisticated ecosystem simulation capable of modeling complex interactions and evolutionary processes.
+VirtualLife aims to create a flexible, extensible platform for artificial life simulation with a focus on emergent behaviors. By following this roadmap, the project will evolve from a simple predator-prey ecosystem to a sophisticated ecosystem simulation capable of modeling complex interactions and evolutionary processes.
 
-The modular design will allow for continuous improvement and extension, while the emphasis on analysis and visualization will make the platform valuable for both educational and research purposes. 
+The web-based interface will make the platform accessible to a wide audience, while the modular design will allow for continuous improvement and extension. The emphasis on analysis and visualization will make the platform valuable for both educational and research purposes. 
