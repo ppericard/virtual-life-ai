@@ -108,15 +108,22 @@ class MovementComponent:
         movement_cost = self.movement_cost * self.speed
         
         # Check if we have enough energy to move
-        if not energy_component.consume_energy(movement_cost):
+        if energy_component.energy < movement_cost:
             return
+            
+        # Consume energy for movement
+        energy_component.energy -= movement_cost
 
         # Random movement
-        dx = random.uniform(-self.speed, self.speed)
-        dy = random.uniform(-self.speed, self.speed)
+        dx = random.randint(-1, 1)
+        dy = random.randint(-1, 1)
+        
+        # Get current position
+        x, y = entity.position
+        new_pos = (x + dx, y + dy)
         
         # Update position through environment to handle boundaries
-        environment.move_entity(entity, (entity.position[0] + dx, entity.position[1] + dy))
+        environment.move_entity(entity, new_pos)
 
 
 class ResourceConsumerComponent:

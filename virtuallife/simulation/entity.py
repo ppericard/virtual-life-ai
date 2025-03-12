@@ -5,7 +5,7 @@ foundation of the entity-component system used in the simulation.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Protocol, TypeVar, cast
+from typing import Dict, Protocol, TypeVar, cast, Optional, Type
 from uuid import UUID, uuid4
 
 
@@ -79,7 +79,7 @@ class Entity:
         """
         return name in self.components
     
-    def get_component(self, name: str) -> Component | None:
+    def get_component(self, name: str) -> Optional[Component]:
         """Get a component by name.
         
         Args:
@@ -90,7 +90,7 @@ class Entity:
         """
         return self.components.get(name)
     
-    def get_component_typed(self, name: str, component_type: type[C]) -> C | None:
+    def get_component_typed(self, name: str, component_type: Type[C]) -> Optional[C]:
         """Get a component by name with type checking.
         
         Args:
@@ -98,18 +98,25 @@ class Entity:
             component_type: The expected type of the component
             
         Returns:
-            The component cast to the specified type if it exists, None otherwise
+            The component if it exists and matches the type, None otherwise
         """
         component = self.get_component(name)
-        if component is not None:
+        if component is not None and isinstance(component, component_type):
             return cast(component_type, component)
         return None
     
     def update(self, environment: "Environment") -> None:
-        """Update the entity state by updating all components.
+        """Update the entity's state by updating all components.
         
         Args:
             environment: The environment the entity exists in
         """
+        # Update each component
         for component in self.components.values():
-            component.update(self, environment) 
+            try:
+                component.update(self, environment)
+            except Exception as e:
+                # Log the error but continue with other components
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error updating component {component}: {str(e)}") 
