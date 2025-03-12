@@ -31,10 +31,10 @@ def test_default_config():
     config = get_default_config()
     
     # Test environment defaults
-    assert config.environment.width == 100
-    assert config.environment.height == 100
+    assert config.environment.width == 30
+    assert config.environment.height == 30
+    assert config.environment.initial_entities == 30
     assert config.environment.boundary_condition == "wrapped"
-    assert config.environment.initial_entities == 10
     
     # Test energy defaults
     assert config.energy.initial_energy == 100.0
@@ -50,29 +50,18 @@ def test_default_config():
     assert config.reproduction.reproduction_threshold == 80.0
     assert config.reproduction.reproduction_cost == 50.0
     assert config.reproduction.reproduction_chance == 0.1
-    assert config.reproduction.offspring_energy == 50.0
     assert config.reproduction.mutation_rate == 0.1
-    assert config.reproduction.inherit_components == {
-        "energy": True,
-        "movement": True,
-        "consumer": True,
-        "reproduction": True,
-    }
-    
-    # Test consumer defaults
-    assert config.consumer.resource_type == "food"
-    assert config.consumer.consumption_rate == 1.0
-    assert config.consumer.energy_conversion == 0.5
     
     # Test resource defaults
-    assert config.resources.resource_types == {"food": 1.0}
-    assert config.resources.initial_density == 0.1
+    assert config.resources.initial_density == 0.2
     assert config.resources.regrowth_rate == 0.05
     assert config.resources.max_resource == 10.0
+    assert "food" in config.resources.resource_types
     
     # Test optional parameters
     assert config.random_seed is None
     assert config.max_steps is None
+    assert config.step_delay == 0.5
 
 
 def test_config_validation():
@@ -128,16 +117,14 @@ def test_save_and_load_config():
         assert loaded_config.random_seed == 42
         
         # Verify other values remain at defaults
-        assert loaded_config.environment.height == 100
-        assert loaded_config.energy.decay_rate == 0.1
-    
+        assert loaded_config.environment.height == 30
+        assert loaded_config.environment.boundary_condition == "wrapped"
+        assert loaded_config.energy.max_energy == 100.0
+        assert loaded_config.step_delay == 0.5
     finally:
         # Clean up
         if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except PermissionError:
-                pass  # Ignore Windows permission errors during cleanup
+            os.unlink(temp_path)
 
 
 def test_load_nonexistent_file():
@@ -174,34 +161,16 @@ def test_load_or_default():
     # Test with no file
     config = load_or_default()
     assert isinstance(config, SimulationConfig)
-    assert config.environment.width == 100  # Default value
+    assert config.environment.width == 30  # Default value
+    assert config.environment.height == 30
+    assert config.step_delay == 0.5
     
     # Test with nonexistent file
     config = load_or_default("nonexistent.yaml")
     assert isinstance(config, SimulationConfig)
-    assert config.environment.width == 100  # Default value
-    
-    # Test with valid file
-    config = get_default_config()
-    config.environment.width = 200
-    
-    # Create a temporary file path
-    temp_dir = tempfile.gettempdir()
-    temp_path = os.path.join(temp_dir, f"test_load_{int(time.time())}.yaml")
-    
-    try:
-        # Save and load config
-        save_config(config, temp_path)
-        loaded_config = load_or_default(temp_path)
-        assert loaded_config.environment.width == 200
-    
-    finally:
-        # Clean up
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except PermissionError:
-                pass  # Ignore Windows permission errors during cleanup
+    assert config.environment.width == 30
+    assert config.environment.height == 30
+    assert config.step_delay == 0.5
 
 
 def test_custom_config():

@@ -137,8 +137,15 @@ def test_default_config_with_cli(runner):
     assert info_result.exit_code == 0
     assert "Configuration Details" in info_result.stdout
     
-    # Default environment size (100x100)
-    assert "100x100" in info_result.stdout
+    # Default environment size (30x30)
+    assert "30x30" in info_result.stdout
+    assert "wrapped" in info_result.stdout
+    assert "Initial entities: 30" in info_result.stdout
     
-    # Default boundary condition
-    assert "wrapped" in info_result.stdout 
+    # Default energy settings
+    assert "Initial: 100.0" in info_result.stdout
+    assert "Max: 100.0" in info_result.stdout
+    assert "Decay rate: 0.1" in info_result.stdout
+    
+    # Default step delay
+    assert "Step delay: 0.5 seconds" in info_result.stdout 
