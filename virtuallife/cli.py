@@ -5,7 +5,6 @@ configuring simulations, and visualizing results.
 """
 
 import logging
-import random
 import sys
 from pathlib import Path
 from typing import Optional
@@ -16,10 +15,7 @@ from rich.logging import RichHandler
 
 from virtuallife.config.loader import load_or_default, save_config
 from virtuallife.config.models import SimulationConfig
-from virtuallife.simulation.environment import Environment
-from virtuallife.simulation.runner import SimulationRunner
-from virtuallife.visualize.console import ConsoleVisualizer
-from virtuallife.visualize.plotting import MatplotlibVisualizer
+from virtuallife.simulation.factory import setup_simulation
 
 # Set up logging with rich
 logging.basicConfig(
@@ -38,46 +34,6 @@ app = typer.Typer(
 
 # Create a console for rich output
 console = Console()
-
-
-def setup_simulation(
-    config: SimulationConfig,
-    visualizer_type: str
-) -> tuple[SimulationRunner, Optional[ConsoleVisualizer | MatplotlibVisualizer]]:
-    """Set up a simulation with the given configuration and visualizer type.
-    
-    Args:
-        config: The simulation configuration
-        visualizer_type: The type of visualizer to use ("console", "matplotlib", or "none")
-        
-    Returns:
-        A tuple containing the simulation runner and visualizer (if any)
-    """
-    # Set random seed if provided
-    if config.random_seed is not None:
-        random.seed(config.random_seed)
-        logger.info(f"Using random seed: {config.random_seed}")
-        
-    # Initialize environment
-    environment = Environment(
-        width=config.environment.width,
-        height=config.environment.height,
-        boundary_condition=config.environment.boundary_condition
-    )
-    
-    # Create simulation runner
-    runner = SimulationRunner(environment=environment, config=config.model_dump())
-    
-    # Set up visualization if requested
-    visualizer = None
-    if visualizer_type == "console":
-        visualizer = ConsoleVisualizer(runner)
-        runner.add_listener("step_end", visualizer.update)
-    elif visualizer_type == "matplotlib":
-        visualizer = MatplotlibVisualizer(runner)
-        runner.add_listener("step_end", visualizer.update)
-    
-    return runner, visualizer
 
 
 @app.command("run")
