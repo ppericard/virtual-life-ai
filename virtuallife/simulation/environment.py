@@ -147,19 +147,17 @@ class Environment:
             case _:
                 return (x % self.width, y % self.height)  # Default to wrapped
     
-    def add_resource(
-        self, resource_type: str, position: Tuple[int, int], value: float
-    ) -> None:
-        """Add or update a resource at a specific position.
+    def add_resource(self, resource_type: str, position: Tuple[int, int], amount: float) -> None:
+        """Add a resource to a specific position.
         
         Args:
-            resource_type: The type of resource
-            position: The (x, y) position
-            value: The resource value
+            resource_type: The type of resource to add
+            position: The (x, y) position to add the resource to
+            amount: The amount of resource to add
         """
         if resource_type not in self.resources:
             self.resources[resource_type] = {}
-        self.resources[resource_type][position] = value
+        self.resources[resource_type][position] = amount
     
     def get_resource(
         self, resource_type: str, position: Tuple[int, int]

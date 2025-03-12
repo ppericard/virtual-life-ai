@@ -1,10 +1,10 @@
-# Default configuration for VirtualLife simulation
+# Configuration for VirtualLife simulation with smaller environment and more entities
 
 environment:
-  width: 100
-  height: 100
+  width: 30  # Reduced from default 100
+  height: 30  # Reduced from default 100
   boundary_condition: wrapped
-  initial_entities: 10
+  initial_entities: 30  # Increased from default 10
 
 energy:
   initial_energy: 100.0
@@ -36,7 +36,7 @@ consumer:
 resources:
   resource_types:
     food: 1.0
-  initial_density: 0.1
+  initial_density: 0.2  # Increased from default 0.1 to support more entities
   regrowth_rate: 0.05
   max_resource: 10.0
 
