@@ -58,11 +58,11 @@ This project is designed to be implemented by an AI agent, which requires specia
   - [x] **Tests for all ECS components with at least 90% coverage**
   - [ ] **Documentation of ECS architecture decisions**
 
-- [ ] Refactored Environment with separated responsibilities:
-  - [ ] `environment/grid.py`: Spatial grid with entity position tracking
-  - [ ] `environment/boundary.py`: Boundary condition handlers
-  - [ ] `environment/resources.py`: Resource management
-  - [ ] **Tests for all environment components**
+- [x] Refactored Environment with separated responsibilities:
+  - [x] `environment/grid.py`: Spatial grid with entity position tracking
+  - [x] `environment/boundary.py`: Boundary condition handlers
+  - [x] `environment/resources.py`: Resource management
+  - [x] **Tests for all environment components**
   - [ ] **Examples of environment interactions**
 
 - [ ] Event System implementation:
