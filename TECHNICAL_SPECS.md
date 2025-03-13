@@ -55,36 +55,52 @@ Since this project will be implemented by an AI agent, the following standards f
 
 ## Architecture Overview
 
-VirtualLife follows a simplified domain-driven architecture focused on the core simulation concepts. The system is organized into these main modules:
+VirtualLife follows a modern Entity-Component-System (ECS) architecture focused on the core simulation concepts. The system is organized into these main modules:
 
 ```
 virtuallife/
-├── simulation/                # Core simulation engine
-│   ├── environment.py         # Environment implementation
-│   ├── entity.py              # Entity system
-│   ├── component.py           # Components for entities
-│   └── runner.py              # Simulation runner
-├── models/                    # Data models using Pydantic
-│   ├── config.py              # Configuration schemas
-│   ├── entity.py              # Entity schemas
-│   └── state.py               # Simulation state models
-├── visualize/                 # Visualization tools
-│   ├── console.py             # Console output
-│   ├── plotting.py            # Matplotlib visualization
-│   └── web/                   # Web visualization (Phase 2+)
-├── api/                       # API layer (Phase 2+)
-│   └── routes.py              # API endpoints
-├── tests/                     # Comprehensive test suite
-│   ├── unit/                  # Unit tests for components
-│   ├── integration/           # Integration tests
-│   ├── functional/            # Functional tests
-│   └── performance/           # Performance tests
-├── docs/                      # Documentation
-│   ├── user/                  # User documentation
-│   ├── developer/             # Developer documentation
-│   └── api/                   # API documentation
-├── cli.py                     # Command-line interface
-└── config/                    # Default configurations
+├── ecs/                  # Entity-Component-System core
+│   ├── entity.py         # Entity implementation
+│   ├── component.py      # Component base and registry
+│   ├── system.py         # System base and implementation
+│   └── world.py          # World container for entities/systems
+├── environment/          # Environment implementation
+│   ├── grid.py           # Spatial grid and queries
+│   ├── resources.py      # Resource management
+│   └── boundary.py       # Boundary condition handlers
+├── components/           # Component implementations
+│   ├── energy.py         # Energy components
+│   ├── movement.py       # Movement components 
+│   └── reproduction.py   # Reproduction components
+├── systems/              # System implementations
+│   ├── movement.py       # Movement processing
+│   ├── lifecycle.py      # Entity lifecycle management
+│   └── resource.py       # Resource system
+├── events/               # Event system
+│   └── dispatcher.py     # Event dispatcher
+├── config/               # Configuration
+│   ├── models.py         # Pydantic models
+│   └── loader.py         # Configuration loading
+├── types/                # Type definitions
+│   └── core.py           # Core type definitions
+├── visualize/            # Visualization tools
+│   ├── console.py        # Console visualization
+│   ├── plotting.py       # Matplotlib visualization
+│   └── web/              # Web visualization (Phase 3+)
+├── simulation/           # Simulation runner
+├── cli.py                # Command-line interface
+├── api/                  # API layer (Phase 3+)
+│   ├── routes.py         # API endpoints
+│   └── models.py         # API data models
+└── tests/                # Comprehensive test suite
+    ├── unit/             # Unit tests
+    │   ├── ecs/          # ECS tests
+    │   ├── environment/  # Environment tests
+    │   ├── components/   # Component tests
+    │   └── systems/      # System tests
+    ├── integration/      # Integration tests
+    ├── functional/       # Functional tests
+    └── performance/      # Performance tests
 ```
 
 ## Development Approach
@@ -113,192 +129,20 @@ virtuallife/
 
 ## Core Components
 
-### 1. Environment
+### 1. ECS Core
 
-A 2D grid-based environment where entities exist and interact.
+The Entity-Component-System (ECS) architecture forms the foundation of the simulation.
 
-```python
-from dataclasses import dataclass, field
-from typing import Dict, Set, Tuple, Optional, List, UUID
-import numpy as np
+#### 1.1 Entity
 
-@dataclass
-class Environment:
-    """A 2D grid environment for the simulation.
-    
-    The Environment class represents the world where entities exist and interact.
-    It manages entity positions, resources, and defines the boundaries of the
-    simulation space.
-    
-    Attributes:
-        width: Width of the environment grid
-        height: Height of the environment grid
-        boundary_condition: How boundaries are handled ("wrapped", "bounded", or "infinite")
-        entities: Dictionary mapping entity IDs to entities
-        entity_positions: Dictionary mapping positions to sets of entity IDs
-        resources: Dictionary mapping resource types to numpy arrays
-        
-    Examples:
-        >>> env = Environment(50, 50)
-        >>> env.width
-        50
-    """
-    width: int
-    height: int
-    boundary_condition: str = "wrapped"
-    entities: Dict[UUID, "Entity"] = field(default_factory=dict)
-    entity_positions: Dict[Tuple[int, int], Set[UUID]] = field(default_factory=lambda: {})
-    resources: Dict[str, np.ndarray] = field(default_factory=dict)
-    
-    def add_entity(self, entity: "Entity") -> None:
-        """Add an entity to the environment.
-        
-        Args:
-            entity: The entity to add
-            
-        Raises:
-            ValueError: If the entity is already in the environment
-            
-        Examples:
-            >>> env = Environment(50, 50)
-            >>> entity = Entity()
-            >>> env.add_entity(entity)
-            >>> entity.id in env.entities
-            True
-        """
-        self.entities[entity.id] = entity
-        pos = entity.position
-        if pos not in self.entity_positions:
-            self.entity_positions[pos] = set()
-        self.entity_positions[pos].add(entity.id)
-    
-    def remove_entity(self, entity_id: UUID) -> None:
-        """Remove an entity from the environment.
-        
-        Args:
-            entity_id: The ID of the entity to remove
-            
-        Examples:
-            >>> env = Environment(50, 50)
-            >>> entity = Entity()
-            >>> env.add_entity(entity)
-            >>> env.remove_entity(entity.id)
-            >>> entity.id in env.entities
-            False
-        """
-        if entity_id in self.entities:
-            entity = self.entities[entity_id]
-            pos = entity.position
-            if pos in self.entity_positions and entity_id in self.entity_positions[pos]:
-                self.entity_positions[pos].remove(entity_id)
-                if not self.entity_positions[pos]:
-                    del self.entity_positions[pos]
-            del self.entities[entity_id]
-    
-    def get_entities_at(self, position: Tuple[int, int]) -> List["Entity"]:
-        """Get all entities at a specific position.
-        
-        Args:
-            position: The (x, y) position to check
-            
-        Returns:
-            A list of entities at the specified position
-            
-        Examples:
-            >>> env = Environment(50, 50)
-            >>> entity = Entity(position=(10, 10))
-            >>> env.add_entity(entity)
-            >>> entities = env.get_entities_at((10, 10))
-            >>> len(entities)
-            1
-        """
-        if position in self.entity_positions:
-            return [self.entities[entity_id] for entity_id in self.entity_positions[position]]
-        return []
-    
-    def get_neighborhood(self, position: Tuple[int, int], radius: int = 1) -> Dict[Tuple[int, int], List["Entity"]]:
-        """Get a view of the environment around a position.
-        
-        Args:
-            position: The center (x, y) position
-            radius: The radius of the neighborhood
-            
-        Returns:
-            A dictionary mapping positions to lists of entities
-            
-        Examples:
-            >>> env = Environment(50, 50)
-            >>> entity = Entity(position=(10, 10))
-            >>> env.add_entity(entity)
-            >>> neighborhood = env.get_neighborhood((10, 10), 1)
-            >>> (10, 10) in neighborhood
-            True
-        """
-        x, y = position
-        neighborhood = {}
-        
-        for dx in range(-radius, radius + 1):
-            for dy in range(-radius, radius + 1):
-                pos = self.normalize_position((x + dx, y + dy))
-                if pos in self.entity_positions:
-                    neighborhood[pos] = [self.entities[entity_id] for entity_id in self.entity_positions[pos]]
-        
-        return neighborhood
-    
-    def normalize_position(self, position: Tuple[int, int]) -> Tuple[int, int]:
-        """Normalize a position based on boundary conditions.
-        
-        Args:
-            position: The (x, y) position to normalize
-            
-        Returns:
-            The normalized (x, y) position
-            
-        Examples:
-            >>> env = Environment(50, 50, "wrapped")
-            >>> env.normalize_position((60, 60))
-            (10, 10)
-        """
-        x, y = position
-        
-        match self.boundary_condition:
-            case "wrapped":
-                return (x % self.width, y % self.height)
-            case "bounded":
-                return (max(0, min(x, self.width - 1)), max(0, min(y, self.height - 1)))
-            case "infinite":
-                return position
-            case _:
-                return (x % self.width, y % self.height)  # Default to wrapped
-```
-
-### 2. Entity Component System
-
-A simplified entity component system using composition rather than inheritance.
+Entities are lightweight containers for components with a unique identifier.
 
 ```python
 from dataclasses import dataclass, field
-from typing import Dict, Protocol, Tuple, UUID, Any, Optional, TypeVar, cast
-from uuid import uuid4
+from typing import Dict, Protocol, TypeVar, cast, Optional, Type, TYPE_CHECKING
+from uuid import UUID, uuid4
 
-# Define a Protocol for components
-class Component(Protocol):
-    """Protocol defining the interface for entity components.
-    
-    All components must implement this protocol to be usable with the Entity class.
-    The update method is called on each simulation step.
-    """
-    def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Update the component state.
-        
-        Args:
-            entity: The entity this component belongs to
-            environment: The environment the entity exists in
-        """
-        ...
-
-# Define a type variable for components
-C = TypeVar('C', bound=Component)
+from virtuallife.types import Position
 
 @dataclass
 class Entity:
@@ -310,494 +154,515 @@ class Entity:
     Attributes:
         id: Unique identifier for the entity
         position: The (x, y) position of the entity in the environment
-        components: Dictionary mapping component names to components
-        
-    Examples:
-        >>> entity = Entity(position=(10, 20))
-        >>> entity.position
-        (10, 20)
+        components: Dictionary mapping component types to components
     """
     id: UUID = field(default_factory=uuid4)
-    position: Tuple[int, int] = (0, 0)
-    components: Dict[str, Component] = field(default_factory=dict)
+    position: Position = field(default=(0, 0))
+    _components: Dict[Type["Component"], "Component"] = field(default_factory=dict)
     
-    def add_component(self, name: str, component: Component) -> None:
+    def add_component(self, component: "Component") -> None:
         """Add a component to the entity.
         
         Args:
-            name: The name of the component
             component: The component to add
             
         Raises:
-            ValueError: If a component with the same name already exists
-            
-        Examples:
-            >>> from dataclasses import dataclass
-            >>> @dataclass
-            ... class TestComponent:
-            ...     def update(self, entity, environment): pass
-            >>> entity = Entity()
-            >>> component = TestComponent()
-            >>> entity.add_component("test", component)
-            >>> entity.has_component("test")
-            True
+            ValueError: If a component of the same type already exists
         """
-        if name in self.components:
-            raise ValueError(f"Component {name} already exists on this entity")
-        self.components[name] = component
+        component_type = type(component)
+        if component_type in self._components:
+            raise ValueError(f"Component of type {component_type.__name__} already exists on this entity")
+        self._components[component_type] = component
     
-    def has_component(self, name: str) -> bool:
-        """Check if the entity has a specific component.
+    def has_component(self, component_type: Type["Component"]) -> bool:
+        """Check if the entity has a specific component type.
         
         Args:
-            name: The name of the component
+            component_type: The type of component to check for
             
         Returns:
             True if the entity has the component, False otherwise
-            
-        Examples:
-            >>> entity = Entity()
-            >>> entity.has_component("nonexistent")
-            False
         """
-        return name in self.components
+        return component_type in self._components
     
-    def get_component(self, name: str) -> Optional[Component]:
-        """Get a component by name.
+    def get_component(self, component_type: Type[TypeVar("C", bound="Component")]) -> Optional[TypeVar("C")]:
+        """Get a component by type.
         
         Args:
-            name: The name of the component
+            component_type: The type of component to get
             
         Returns:
             The component if it exists, None otherwise
-            
-        Examples:
-            >>> from dataclasses import dataclass
-            >>> @dataclass
-            ... class TestComponent:
-            ...     value: int = 42
-            ...     def update(self, entity, environment): pass
-            >>> entity = Entity()
-            >>> component = TestComponent()
-            >>> entity.add_component("test", component)
-            >>> entity.get_component("test").value
-            42
         """
-        return self.components.get(name)
-    
-    def get_component_typed(self, name: str, component_type: type[C]) -> Optional[C]:
-        """Get a component by name with the correct type.
-        
-        Args:
-            name: The name of the component
-            component_type: The expected type of the component
-            
-        Returns:
-            The component cast to the specified type if it exists, None otherwise
-            
-        Examples:
-            >>> from dataclasses import dataclass
-            >>> @dataclass
-            ... class TestComponent:
-            ...     value: int = 42
-            ...     def update(self, entity, environment): pass
-            >>> entity = Entity()
-            >>> component = TestComponent()
-            >>> entity.add_component("test", component)
-            >>> comp = entity.get_component_typed("test", TestComponent)
-            >>> comp.value
-            42
-        """
-        component = self.get_component(name)
+        component = self._components.get(component_type)
         if component is not None:
             return cast(component_type, component)
         return None
-    
-    def update(self, environment: "Environment") -> None:
-        """Update the entity state by updating all components.
-        
-        Args:
-            environment: The environment the entity exists in
-            
-        Examples:
-            >>> from dataclasses import dataclass
-            >>> @dataclass
-            ... class CounterComponent:
-            ...     count: int = 0
-            ...     def update(self, entity, environment): 
-            ...         self.count += 1
-            >>> entity = Entity()
-            >>> component = CounterComponent()
-            >>> entity.add_component("counter", component)
-            >>> entity.update(None)  # Environment is None for this example
-            >>> entity.get_component_typed("counter", CounterComponent).count
-            1
-        """
-        for component in self.components.values():
-            component.update(self, environment)
 ```
 
-### 3. Standard Components
+#### 1.2 Component Protocol
 
-A set of basic components for common entity behaviors, with comprehensive documentation and built-in tests.
+Components define the data and behavior for entities.
 
 ```python
-from dataclasses import dataclass
-from typing import Tuple, Optional, List, cast
-import random
+from typing import Protocol, TYPE_CHECKING
 
-@dataclass
-class EnergyComponent:
-    """Component handling entity energy.
+if TYPE_CHECKING:
+    from virtuallife.ecs.entity import Entity
+    from virtuallife.ecs.world import World
+
+class Component(Protocol):
+    """Protocol defining the interface for entity components.
     
-    This component manages an entity's energy level, which decreases over time.
-    If energy reaches zero, the entity is removed from the environment.
-    
-    Attributes:
-        energy: Current energy level
-        decay_rate: Rate at which energy decreases per step
-        
-    Examples:
-        >>> component = EnergyComponent(energy=100.0, decay_rate=0.5)
-        >>> component.energy
-        100.0
+    All components must implement this protocol to be usable with the Entity class.
+    The update method is called on each simulation step.
     """
-    energy: float = 100.0
-    decay_rate: float = 0.1
-    
-    def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Update the entity's energy.
+    def update(self, entity: "Entity", world: "World", dt: float) -> None:
+        """Update the component state.
         
         Args:
             entity: The entity this component belongs to
-            environment: The environment
-            
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> entity = MagicMock()
-            >>> environment = MagicMock()
-            >>> component = EnergyComponent(energy=1.0, decay_rate=0.5)
-            >>> component.update(entity, environment)
-            >>> component.energy
-            0.5
+            world: The world the entity exists in
+            dt: Time delta since last update
         """
-        self.energy -= self.decay_rate
-        if self.energy <= 0:
-            environment.remove_entity(entity.id)
-
-@dataclass
-class MovementComponent:
-    """Component for entity movement.
-    
-    This component allows an entity to move around the environment.
-    Movement consumes energy if the entity has an EnergyComponent.
-    
-    Attributes:
-        speed: Movement speed
-        movement_cost: Energy cost per unit of movement
-        
-    Examples:
-        >>> component = MovementComponent(speed=2.0, movement_cost=0.2)
-        >>> component.speed
-        2.0
-    """
-    speed: float = 1.0
-    movement_cost: float = 0.1
-    
-    def update(self, entity: "Entity", environment: "Environment") -> None:
-        """Move the entity.
-        
-        Args:
-            entity: The entity this component belongs to
-            environment: The environment
-            
-        Note:
-            This implementation uses simple random movement.
-            The entity will not move if it does not have enough energy.
-            
-        Examples:
-            >>> # This example cannot be easily tested in a doctest
-            >>> # See unit tests for complete testing
-        """
-        if not entity.has_component("energy"):
-            return
-            
-        energy_component = entity.get_component("energy")
-        assert energy_component is not None  # For type checking
-        if energy_component.energy <= 0:
-            return
-            
-        # Simple random movement
-        dx = random.choice([-1, 0, 1])
-        dy = random.choice([-1, 0, 1])
-        
-        # Calculate new position and cost
-        x, y = entity.position
-        new_pos = environment.normalize_position((x + dx, y + dy))
-        
-        # Update position and energy
-        energy_component.energy -= self.movement_cost * self.speed
-        
-        # Update position in environment
-        if entity.position in environment.entity_positions:
-            environment.entity_positions[entity.position].remove(entity.id)
-            if not environment.entity_positions[entity.position]:
-                del environment.entity_positions[entity.position]
-                
-        entity.position = new_pos
-        
-        if new_pos not in environment.entity_positions:
-            environment.entity_positions[new_pos] = set()
-        environment.entity_positions[new_pos].add(entity.id)
+        ...
 ```
 
-### 4. Simulation Runner
+#### 1.3 System
 
-Controls the simulation state and execution flow. Full documentation and extensive error checking.
+Systems process entities with specific components.
+
+```python
+from abc import ABC, abstractmethod
+from typing import Set, Type, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from virtuallife.ecs.entity import Entity
+    from virtuallife.ecs.world import World
+    from virtuallife.ecs.component import Component
+
+class System(ABC):
+    """Base class for systems that process entities with specific components.
+    
+    Systems are responsible for updating entities that have specific components.
+    They provide a way to organize game logic by functionality rather than by entity.
+    """
+    
+    def __init__(self) -> None:
+        """Initialize the system."""
+        self.entities: Set[UUID] = set()
+        
+    @property
+    @abstractmethod
+    def required_components(self) -> List[Type["Component"]]:
+        """Get the component types required for an entity to be processed by this system.
+        
+        Returns:
+            A list of component types that an entity must have to be processed
+        """
+        pass
+        
+    def should_process(self, entity: "Entity") -> bool:
+        """Check if the entity should be processed by this system.
+        
+        Args:
+            entity: The entity to check
+            
+        Returns:
+            True if the entity has all required components, False otherwise
+        """
+        return all(entity.has_component(component_type) for component_type in self.required_components)
+        
+    def register_entity(self, entity: "Entity") -> None:
+        """Register an entity with this system.
+        
+        Args:
+            entity: The entity to register
+        """
+        if self.should_process(entity):
+            self.entities.add(entity.id)
+            
+    def unregister_entity(self, entity_id: UUID) -> None:
+        """Unregister an entity from this system.
+        
+        Args:
+            entity_id: The ID of the entity to unregister
+        """
+        if entity_id in self.entities:
+            self.entities.remove(entity_id)
+            
+    @abstractmethod
+    def process(self, world: "World", dt: float) -> None:
+        """Process all registered entities.
+        
+        Args:
+            world: The world containing the entities
+            dt: Time delta since last update
+        """
+        pass
+```
+
+#### 1.4 World
+
+The World manages entities, systems, and their relationships.
 
 ```python
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable, TypeVar, Generic, cast
-import time
+from typing import Dict, List, Set, Type, Optional, TYPE_CHECKING
 from uuid import UUID
 
-# Type for simulation event handlers
-T = TypeVar('T')
-EventHandler = Callable[["Simulation", T], None]
+if TYPE_CHECKING:
+    from virtuallife.ecs.entity import Entity
+    from virtuallife.ecs.system import System
+    from virtuallife.environment.grid import SpatialGrid
+    from virtuallife.events.dispatcher import EventDispatcher
 
 @dataclass
-class Simulation:
-    """Controls the simulation execution.
+class World:
+    """Container for entities, systems, and their relationships.
     
-    The Simulation class manages the execution of the simulation, including
-    advancing the simulation state, managing entities, and notifying listeners
-    of events.
+    The World class manages entities and systems, and provides methods for
+    updating the simulation state.
     
     Attributes:
-        environment: The environment for the simulation
-        config: Configuration parameters
-        current_step: The current simulation step
-        running: Whether the simulation is currently running
-        last_update_time: Timestamp of the last update
-        listeners: Dictionary mapping event types to lists of callback functions
-        
-    Examples:
-        >>> from unittest.mock import MagicMock
-        >>> env = MagicMock()
-        >>> sim = Simulation(environment=env)
-        >>> sim.current_step
-        0
+        entities: Dictionary mapping entity IDs to entities
+        systems: List of systems that process entities
+        grid: Spatial grid for efficient entity lookups
+        event_dispatcher: Event dispatcher for simulation events
     """
-    environment: "Environment"
-    config: Dict[str, Any] = field(default_factory=dict)
-    current_step: int = 0
-    running: bool = False
-    last_update_time: float = field(default_factory=time.time)
-    listeners: Dict[str, List[Callable]] = field(default_factory=lambda: {
-        "step_start": [],
-        "step_end": [],
-        "entity_added": [],
-        "entity_removed": []
-    })
+    entities: Dict[UUID, "Entity"] = field(default_factory=dict)
+    systems: List["System"] = field(default_factory=list)
+    grid: Optional["SpatialGrid"] = None
+    event_dispatcher: Optional["EventDispatcher"] = None
     
-    def add_listener(self, event_type: str, callback: Callable) -> None:
-        """Add a listener for a specific event type.
+    def add_entity(self, entity: "Entity") -> None:
+        """Add an entity to the world.
         
         Args:
-            event_type: The type of event to listen for
-            callback: The function to call when the event occurs
-            
-        Raises:
-            ValueError: If the event type is not supported
-            
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> env = MagicMock()
-            >>> sim = Simulation(environment=env)
-            >>> callback = lambda sim, **kwargs: None
-            >>> sim.add_listener("step_start", callback)
-            >>> len(sim.listeners["step_start"])
-            1
+            entity: The entity to add
         """
-        if event_type not in self.listeners:
-            raise ValueError(f"Unsupported event type: {event_type}")
+        self.entities[entity.id] = entity
+        
+        # Register with spatial grid if available
+        if self.grid is not None:
+            self.grid.add_entity(entity.id, entity.position)
             
-        self.listeners[event_type].append(callback)
-    
-    def notify_listeners(self, event_type: str, **kwargs) -> None:
-        """Notify all listeners of an event.
+        # Register with systems
+        for system in self.systems:
+            system.register_entity(entity)
+            
+        # Dispatch event
+        if self.event_dispatcher is not None:
+            self.event_dispatcher.dispatch("entity_added", entity=entity)
+            
+    def remove_entity(self, entity_id: UUID) -> None:
+        """Remove an entity from the world.
         
         Args:
-            event_type: The type of event that occurred
-            **kwargs: Additional data to pass to the listeners
+            entity_id: The ID of the entity to remove
+        """
+        if entity_id not in self.entities:
+            return
             
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> env = MagicMock()
-            >>> sim = Simulation(environment=env)
-            >>> data = {"called": False}
-            >>> def callback(sim, **kwargs):
-            ...     data["called"] = True
-            >>> sim.add_listener("step_start", callback)
-            >>> sim.notify_listeners("step_start")
-            >>> data["called"]
-            True
-        """
-        if event_type in self.listeners:
-            for callback in self.listeners[event_type]:
-                callback(self, **kwargs)
-    
-    def step(self) -> None:
-        """Execute a single simulation step.
+        entity = self.entities[entity_id]
         
-        This advances the simulation by one step, updating all entities
-        and notifying listeners of the step start and end events.
+        # Unregister from spatial grid if available
+        if self.grid is not None:
+            self.grid.remove_entity(entity_id, entity.position)
+            
+        # Unregister from systems
+        for system in self.systems:
+            system.unregister_entity(entity_id)
+            
+        # Dispatch event
+        if self.event_dispatcher is not None:
+            self.event_dispatcher.dispatch("entity_removed", entity=entity)
+            
+        # Remove from entities
+        del self.entities[entity_id]
         
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> env = MagicMock()
-            >>> env.entities = {}
-            >>> sim = Simulation(environment=env)
-            >>> sim.step()
-            >>> sim.current_step
-            1
-        """
-        self.current_step += 1
-        self.notify_listeners("step_start")
-        
-        # Update all entities (make a copy to handle removals during iteration)
-        entities = list(self.environment.entities.values())
-        for entity in entities:
-            entity.update(self.environment)
-        
-        self.notify_listeners("step_end")
-    
-    def run(self, steps: Optional[int] = None) -> None:
-        """Run the simulation for a number of steps or indefinitely.
+    def add_system(self, system: "System") -> None:
+        """Add a system to the world.
         
         Args:
-            steps: Number of steps to run, or None to run indefinitely
+            system: The system to add
+        """
+        self.systems.append(system)
+        
+        # Register existing entities with the system
+        for entity in self.entities.values():
+            system.register_entity(entity)
             
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> env = MagicMock()
-            >>> env.entities = {}
-            >>> sim = Simulation(environment=env)
-            >>> # Run for 5 steps
-            >>> sim.run(5)
-            >>> sim.current_step
-            5
-        """
-        self.running = True
-        step_count = 0
+    def update(self, dt: float) -> None:
+        """Update the world state.
         
-        try:
-            while self.running and (steps is None or step_count < steps):
-                self.step()
-                step_count += 1
-                
-                # Optional sleep for real-time visualization
-                if "step_delay" in self.config:
-                    time.sleep(self.config["step_delay"])
-        finally:
-            self.running = False
-    
-    def stop(self) -> None:
-        """Stop the simulation.
-        
-        Examples:
-            >>> from unittest.mock import MagicMock
-            >>> env = MagicMock()
-            >>> sim = Simulation(environment=env)
-            >>> sim.running = True
-            >>> sim.stop()
-            >>> sim.running
-            False
+        Args:
+            dt: Time delta since last update
         """
-        self.running = False
+        # Process all systems
+        for system in self.systems:
+            system.process(self, dt)
 ```
 
-### 5. Configuration System
+### 2. Environment
 
-A Pydantic-based configuration system to validate inputs and provide defaults. Full type checking and validation.
+The environment module provides specialized classes for managing the simulation space.
+
+#### 2.1 Spatial Grid
+
+The SpatialGrid manages entity positions and provides efficient spatial queries.
 
 ```python
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any, Literal
+from dataclasses import dataclass, field
+from typing import Dict, Set, Tuple, List, Optional, TYPE_CHECKING
+from uuid import UUID
+from collections import defaultdict
 
-class SimulationConfig(BaseModel):
-    """Configuration for a simulation.
+from virtuallife.types import Position
+from virtuallife.environment.boundary import BoundaryHandler
+
+@dataclass
+class SpatialGrid:
+    """A spatial grid for efficient entity lookups.
     
-    This class defines the configuration parameters for a simulation,
-    with validation and default values.
+    The SpatialGrid class manages entity positions and provides methods for
+    efficient spatial queries.
     
     Attributes:
-        width: Width of the environment grid
-        height: Height of the environment grid
-        boundary_condition: How boundaries are handled
-        step_delay: Delay between steps for visualization
-        random_seed: Random seed for reproducibility
-        initial_plants: Initial number of plants
-        initial_herbivores: Initial number of herbivores
-        initial_predators: Initial number of predators
-        plant_growth_rate: Rate at which plants grow
-        plant_max_energy: Maximum energy for plants
-        herbivore_initial_energy: Initial energy for herbivores
-        herbivore_speed: Movement speed for herbivores
-        herbivore_energy_decay: Energy decay rate for herbivores
-        predator_initial_energy: Initial energy for predators
-        predator_speed: Movement speed for predators
-        predator_energy_decay: Energy decay rate for predators
-        
-    Examples:
-        >>> config = SimulationConfig(width=100, height=100)
-        >>> config.width
-        100
-        >>> config.boundary_condition
-        'wrapped'
+        width: Width of the grid
+        height: Height of the grid
+        boundary_handler: Handler for boundary conditions
+        cell_size: Size of each grid cell for spatial partitioning
+        cells: Dictionary mapping cell coordinates to sets of entity IDs
+        entity_positions: Dictionary mapping entity IDs to positions
     """
-    width: int = Field(50, ge=1, description="Width of the environment grid")
-    height: int = Field(50, ge=1, description="Height of the environment grid")
-    boundary_condition: Literal["wrapped", "bounded", "infinite"] = "wrapped"
-    step_delay: Optional[float] = Field(None, ge=0, description="Delay between steps for visualization")
-    random_seed: Optional[int] = None
+    width: int
+    height: int
+    boundary_handler: BoundaryHandler
+    cell_size: int = 10
+    cells: Dict[Tuple[int, int], Set[UUID]] = field(default_factory=lambda: defaultdict(set))
+    entity_positions: Dict[UUID, Position] = field(default_factory=dict)
     
-    # Entity initialization
-    initial_plants: int = Field(100, ge=0)
-    initial_herbivores: int = Field(20, ge=0)
-    initial_predators: int = Field(5, ge=0)
-    
-    # Plant parameters
-    plant_growth_rate: float = Field(0.1, ge=0)
-    plant_max_energy: float = Field(100.0, ge=0)
-    
-    # Herbivore parameters
-    herbivore_initial_energy: float = Field(100.0, ge=0)
-    herbivore_speed: float = Field(1.0, ge=0)
-    herbivore_energy_decay: float = Field(0.1, ge=0)
-    
-    # Predator parameters
-    predator_initial_energy: float = Field(150.0, ge=0)
-    predator_speed: float = Field(1.5, ge=0)
-    predator_energy_decay: float = Field(0.2, ge=0)
-    
-    @validator("width", "height")
-    def ensure_reasonable_dimensions(cls, v, field):
-        """Ensure grid dimensions are reasonable for performance.
+    def position_to_cell(self, position: Position) -> Tuple[int, int]:
+        """Convert a position to a cell coordinate.
         
         Args:
-            v: The value to validate
-            field: The field being validated
+            position: The position to convert
             
         Returns:
-            The validated value
-            
-        Raises:
-            ValueError: If dimensions are too large
+            The cell coordinate
         """
-        if v > 1000:
-            raise ValueError(f"{field.name} should be less than 1000 for performance reasons")
-        return v
+        x, y = position
+        return (x // self.cell_size, y // self.cell_size)
+        
+    def add_entity(self, entity_id: UUID, position: Position) -> None:
+        """Add an entity to the grid.
+        
+        Args:
+            entity_id: The ID of the entity to add
+            position: The position of the entity
+        """
+        # Normalize position based on boundary conditions
+        position = self.boundary_handler.normalize_position(position)
+        
+        # Add to entity positions
+        self.entity_positions[entity_id] = position
+        
+        # Add to cell
+        cell = self.position_to_cell(position)
+        self.cells[cell].add(entity_id)
+        
+    def remove_entity(self, entity_id: UUID, position: Optional[Position] = None) -> None:
+        """Remove an entity from the grid.
+        
+        Args:
+            entity_id: The ID of the entity to remove
+            position: The position of the entity (optional, will be looked up if not provided)
+        """
+        if entity_id not in self.entity_positions:
+            return
+            
+        # Get position if not provided
+        if position is None:
+            position = self.entity_positions[entity_id]
+            
+        # Remove from cell
+        cell = self.position_to_cell(position)
+        if cell in self.cells and entity_id in self.cells[cell]:
+            self.cells[cell].remove(entity_id)
+            if not self.cells[cell]:
+                del self.cells[cell]
+                
+        # Remove from entity positions
+        del self.entity_positions[entity_id]
+        
+    def get_entities_in_radius(self, position: Position, radius: int) -> Set[UUID]:
+        """Get all entities within a radius of the position.
+        
+        Args:
+            position: The center position
+            radius: The radius to search
+            
+        Returns:
+            A set of entity IDs within the radius
+        """
+        entities = set()
+        center_cell = self.position_to_cell(position)
+        cell_radius = (radius // self.cell_size) + 1
+        
+        for dx in range(-cell_radius, cell_radius + 1):
+            for dy in range(-cell_radius, cell_radius + 1):
+                cell = (center_cell[0] + dx, center_cell[1] + dy)
+                if cell in self.cells:
+                    entities.update(self.cells[cell])
+                    
+        return entities
+```
+
+### 3. Components
+
+Components define the data and behavior for entities.
+
+#### 3.1 Energy Component
+
+```python
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from virtuallife.ecs.entity import Entity
+    from virtuallife.ecs.world import World
+
+@dataclass
+class EnergyComponent:
+    """Component that manages an entity's energy level.
+    
+    Attributes:
+        energy: Current energy level
+        max_energy: Maximum energy level
+        decay_rate: Rate at which energy decreases per step
+        death_threshold: Energy level at which the entity dies
+    """
+    energy: float
+    max_energy: float
+    decay_rate: float
+    death_threshold: float = 0.0
+    
+    def update(self, entity: "Entity", world: "World", dt: float) -> None:
+        """Update the entity's energy level.
+        
+        Args:
+            entity: The entity this component belongs to
+            world: The world the entity exists in
+            dt: Time delta since last update
+        """
+        self.energy -= self.decay_rate * dt
+        
+        if self.energy <= self.death_threshold:
+            world.remove_entity(entity.id)
+            
+    def consume_energy(self, amount: float) -> bool:
+        """Consume some energy.
+        
+        Args:
+            amount: The amount of energy to consume
+            
+        Returns:
+            True if the energy was consumed, False if there wasn't enough
+        """
+        if amount > self.energy:
+            return False
+            
+        self.energy -= amount
+        return True
+        
+    def add_energy(self, amount: float) -> None:
+        """Add energy up to the maximum.
+        
+        Args:
+            amount: The amount of energy to add
+        """
+        self.energy = min(self.energy + amount, self.max_energy)
+```
+
+### 4. Systems
+
+Systems process entities with specific components.
+
+#### 4.1 Movement System
+
+```python
+from typing import List, Type, Dict, Set, TYPE_CHECKING
+import random
+
+from virtuallife.ecs.system import System
+from virtuallife.components.movement import MovementComponent
+from virtuallife.components.energy import EnergyComponent
+
+if TYPE_CHECKING:
+    from virtuallife.ecs.component import Component
+    from virtuallife.ecs.world import World
+
+class MovementSystem(System):
+    """System for processing entity movement.
+    
+    This system updates the positions of entities with movement components.
+    """
+    
+    @property
+    def required_components(self) -> List[Type["Component"]]:
+        """Get the component types required for an entity to be processed by this system.
+        
+        Returns:
+            A list of component types that an entity must have to be processed
+        """
+        return [MovementComponent]
+        
+    def process(self, world: "World", dt: float) -> None:
+        """Process all registered entities.
+        
+        Args:
+            world: The world containing the entities
+            dt: Time delta since last update
+        """
+        for entity_id in self.entities:
+            entity = world.entities.get(entity_id)
+            if entity is None:
+                continue
+                
+            # Get required components
+            movement = entity.get_component(MovementComponent)
+            if movement is None:
+                continue
+                
+            # Check if entity has energy
+            energy = entity.get_component(EnergyComponent)
+            
+            # Calculate movement
+            dx = random.choice([-1, 0, 1])
+            dy = random.choice([-1, 0, 1])
+            
+            # Skip if no movement
+            if dx == 0 and dy == 0:
+                continue
+                
+            # Calculate energy cost
+            if energy is not None:
+                energy_cost = movement.movement_cost * movement.speed * dt
+                if not energy.consume_energy(energy_cost):
+                    continue
+                    
+            # Update position
+            old_position = entity.position
+            new_position = (old_position[0] + dx, old_position[1] + dy)
+            
+            # Update spatial grid if available
+            if world.grid is not None:
+                world.grid.remove_entity(entity_id, old_position)
+                world.grid.add_entity(entity_id, new_position)
+                
+            # Update entity position
+            entity.position = new_position
 ```
 
 ## Testing Strategy

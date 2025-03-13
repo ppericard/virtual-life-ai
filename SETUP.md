@@ -31,7 +31,7 @@ poetry install
 
 This will create a virtual environment and install the core dependencies.
 
-For optional dependency groups (available in Phase 2+):
+For optional dependency groups (available in Phase 3+):
 
 ```bash
 # Web interface dependencies
@@ -39,6 +39,9 @@ poetry install --with web
 
 # Data analysis dependencies
 poetry install --with data
+
+# Visualization dependencies
+poetry install --with viz
 ```
 
 4. **Activate the virtual environment**
@@ -53,48 +56,54 @@ poetry shell
 pre-commit install
 ```
 
-## Simplified Project Structure
+## Improved Project Structure
 
-The project has been streamlined for easier development while maintaining a clear path to advanced features:
+The project has been restructured for better organization, maintainability, and performance:
 
 ```
-virtual-life-ai/
-├── tests/                  # Comprehensive test suite
-│   ├── unit/              # Unit tests for all components
-│   ├── integration/       # Integration tests for component interactions
-│   ├── functional/        # Functional tests for features
-│   └── conftest.py        # Shared test fixtures
-├── virtuallife/           # Main package
-│   ├── __init__.py
-│   ├── simulation/        # Core simulation engine
-│   │   ├── __init__.py
-│   │   ├── environment.py # Environment implementation
-│   │   ├── entity.py      # Entity implementation
-│   │   ├── component.py   # Components for entities
-│   │   └── runner.py      # Simulation runner
-│   ├── models/            # Data models using Pydantic
-│   │   ├── __init__.py
-│   │   ├── config.py      # Configuration schemas
-│   │   ├── entity.py      # Entity schemas
-│   │   └── state.py       # Simulation state models
-│   ├── visualize/         # Visualization tools
-│   │   ├── __init__.py
-│   │   ├── console.py     # Console visualization
-│   │   ├── plotting.py    # Matplotlib visualization
-│   │   └── web/           # Web visualization (Phase 2+)
-│   ├── api/               # API layer (Phase 2+)
-│   │   ├── __init__.py
-│   │   └── routes.py      # API endpoints
-│   ├── cli.py             # Command-line interface
-│   └── config/            # Default configurations
-├── docs/                  # Documentation
-│   ├── user/              # User documentation
-│   ├── developer/         # Developer documentation
-│   └── api/               # API documentation
-├── pyproject.toml         # Project metadata and dependencies
-├── README.md              # Project overview
-├── ROADMAP.md             # Development roadmap
-└── TECHNICAL_SPECS.md     # Technical specifications
+virtuallife/
+├── ecs/                  # Entity-Component-System core
+│   ├── entity.py         # Entity implementation
+│   ├── component.py      # Component base and registry
+│   ├── system.py         # System base and implementation
+│   └── world.py          # World container for entities/systems
+├── environment/          # Environment implementation
+│   ├── grid.py           # Spatial grid and queries
+│   ├── resources.py      # Resource management
+│   └── boundary.py       # Boundary condition handlers
+├── components/           # Component implementations
+│   ├── energy.py         # Energy components
+│   ├── movement.py       # Movement components 
+│   └── reproduction.py   # Reproduction components
+├── systems/              # System implementations
+│   ├── movement.py       # Movement processing
+│   ├── lifecycle.py      # Entity lifecycle management
+│   └── resource.py       # Resource system
+├── events/               # Event system
+│   └── dispatcher.py     # Event dispatcher
+├── config/               # Configuration
+│   ├── models.py         # Pydantic models
+│   └── loader.py         # Configuration loading
+├── types/                # Type definitions
+│   └── core.py           # Core type definitions
+├── visualize/            # Visualization tools
+│   ├── console.py        # Console visualization
+│   ├── plotting.py       # Matplotlib visualization
+│   └── web/              # Web visualization (Phase 3+)
+├── simulation/           # Simulation runner
+├── cli.py                # Command-line interface
+├── api/                  # API layer (Phase 3+)
+│   ├── routes.py         # API endpoints
+│   └── models.py         # API data models
+└── tests/                # Comprehensive test suite
+    ├── unit/             # Unit tests
+    │   ├── ecs/          # ECS tests
+    │   ├── environment/  # Environment tests
+    │   ├── components/   # Component tests
+    │   └── systems/      # System tests
+    ├── integration/      # Integration tests
+    ├── functional/       # Functional tests
+    └── performance/      # Performance tests
 ```
 
 ## Development Standards for AI Implementation
@@ -120,16 +129,22 @@ Documentation is **critical** for AI development and must be comprehensive:
    - Explain the initialization parameters
    - Document class attributes
    - Explain the relationships with other classes
+   - Document any protocols implemented
 
-4. **Code Comments**
+4. **Protocol Documentation**
+   - Document the purpose of each protocol
+   - Explain the methods that must be implemented
+   - Provide examples of implementations
+
+5. **Code Comments**
    - Use comments to explain "why" not just "what"
    - Comment complex or non-obvious logic
    - Explain design decisions and tradeoffs
 
-5. **Configuration Documentation**
-   - Document all configuration options
-   - Provide examples of different configurations
-   - Explain the effects of each configuration option
+6. **Type Documentation**
+   - Document custom type definitions
+   - Explain constraints on type parameters
+   - Provide usage examples for complex types
 
 ### Testing Standards
 
@@ -148,13 +163,21 @@ Testing is **essential** for AI development and must be thorough:
    - Verify system state consistency
    - Test event propagation
    - Test configuration application
+   - Test ECS systems with multiple entities
 
 3. **Property-Based Testing**
    - Use property-based testing for algorithms with invariants
    - Test statistically correct behavior for randomized operations
    - Verify genetic algorithms with property tests
+   - Test system invariants with randomized inputs
 
-4. **Documentation Testing**
+4. **Performance Testing**
+   - Benchmark critical operations
+   - Test scaling with large numbers of entities
+   - Verify spatial partitioning efficiency
+   - Test resource management performance
+
+5. **Documentation Testing**
    - Examples in docstrings must be tested
    - README examples must be verified
    - Configuration examples must be tested
@@ -165,31 +188,35 @@ Testing is **essential** for AI development and must be thorough:
    - Every function, method, and variable must have type annotations
    - Use generics where appropriate
    - Use Literal types for constrained values
-   - Leverage TypedDict and Protocol for clear interfaces
+   - Use Protocol for interface definitions
+   - Use TypeVar for generic types
+   - Use NewType for domain-specific types
 
 2. **Error Handling**
    - Validate inputs at function boundaries
    - Provide clear error messages
    - Use appropriate exception types
    - Handle edge cases explicitly
+   - Log errors with context information
 
 3. **Code Style**
    - Follow Black/isort formatting
    - Use descriptive variable names
    - Keep functions focused on a single task
    - Use appropriate design patterns
+   - Keep files under 300 lines
 
 ## Phased Development Guidelines
 
-### Phase 1: Core Simulation (Weeks 1-2)
+### Phase 1: Core Architecture Refactoring (Weeks 1-2)
 
 Focus on:
-- Basic environment and entity implementation
-- Simple predator-prey ecosystem
-- CLI interface and matplotlib visualization
-- Core data structures and algorithms
+- ECS architecture implementation
+- Environment refactoring
+- Event system implementation
+- Type system development
 - **Comprehensive testing of all components**
-- **Thorough documentation of all functions and classes**
+- **Thorough documentation of architectural decisions**
 
 Development workflow:
 1. **Document First**: Define interface with detailed docstrings
@@ -197,27 +224,37 @@ Development workflow:
 3. **Implement Third**: Implement functionality to match docs and pass tests
 4. **Refactor Fourth**: Improve implementation while maintaining tests
 
-### Phase 2: API and Enhanced Visualization (Weeks 3-4)
+### Phase 2: Code Organization and Performance (Weeks 3-4)
+
+Focus on:
+- Component reorganization
+- System implementations
+- Performance optimizations
+- Configuration enhancements
+- **Integration tests for component interactions**
+- **Performance benchmarks for critical operations**
+
+### Phase 3: API and Visualization Enhancements (Weeks 5-6)
 
 Focus on:
 - REST API with FastAPI
-- Simple web visualization
-- More sophisticated entity behaviors
-- Data collection for analysis
+- Enhanced visualization
+- Entity behavior improvements
+- Data collection enhancements
 - **API documentation with examples**
 - **Tests for all API endpoints**
 
-### Phase 3: Advanced Features (Weeks 5-8)
+### Phase 4: Advanced Features (Weeks 7-10)
 
 Focus on:
-- Species concept and simple genetics
-- More complex behaviors
-- Enhanced web visualization
-- WebSocket support for real-time updates
+- Species implementation
+- Genetics system
+- Enhanced web interface
+- Advanced behaviors
 - **Property-based tests for genetics**
 - **Technical design documentation**
 
-### Phase 4: Evolution and Analysis (Weeks 9-12)
+### Phase 5: Evolution and Analysis (Weeks 11-12)
 
 Focus on:
 - Evolutionary mechanisms
@@ -245,13 +282,16 @@ pytest --cov=virtuallife
 pytest --cov=virtuallife --cov-report=html
 
 # Run tests on a specific component
-pytest tests/unit/simulation/test_environment.py
+pytest tests/unit/ecs/test_entity.py
 
 # Run tests with verbose output
 pytest -v
 
 # Run tests and output test duration
 pytest --durations=10
+
+# Run performance tests
+pytest tests/performance/
 ```
 
 ### Documentation Testing
@@ -263,7 +303,7 @@ Verify docstring examples:
 pytest --doctest-modules virtuallife
 
 # Check specific module docstrings
-pytest --doctest-modules virtuallife/simulation/environment.py
+pytest --doctest-modules virtuallife/ecs/entity.py
 ```
 
 ## Documentation Guidelines
@@ -306,12 +346,48 @@ Detailed description of the module's purpose and contents.
 Describe how the module fits into the overall architecture.
 
 Examples:
-    >>> from virtuallife.simulation import environment
-    >>> env = environment.Environment(50, 50)
+    >>> from virtuallife.ecs import entity
+    >>> from virtuallife.ecs.world import World
+    >>> world = World()
+    >>> entity = entity.Entity(position=(10, 10))
+    >>> world.add_entity(entity)
     
 Attributes:
     MODULE_CONSTANT: Description of any module-level constants
 """
+```
+
+### Protocol Documentation
+
+```python
+class Movable(Protocol):
+    """Protocol for objects that can move.
+    
+    This protocol defines the interface for any object that can move
+    within the environment. It requires position information and a
+    move method.
+    
+    Examples:
+        >>> class MovableEntity:
+        ...     def __init__(self, position: tuple[int, int]):
+        ...         self.position = position
+        ...     def move(self, dx: int, dy: int) -> None:
+        ...         self.position = (self.position[0] + dx, self.position[1] + dy)
+        >>> entity = MovableEntity((0, 0))
+        >>> entity.move(1, 2)
+        >>> entity.position
+        (1, 2)
+    """
+    position: tuple[int, int]
+    
+    def move(self, dx: int, dy: int) -> None:
+        """Move the object by the specified delta.
+        
+        Args:
+            dx: Change in x position
+            dy: Change in y position
+        """
+        ...
 ```
 
 ### Test Documentation
@@ -335,6 +411,8 @@ def test_function_name_scenario():
   - Classes: `CamelCase`
   - Functions and variables: `snake_case`
   - Constants: `UPPER_SNAKE_CASE`
+  - Type variables: `T`, `U`, etc.
+  - Protocols: `HasX`, `CanY`, etc.
 
 ## Development Principles for AI Implementation
 
@@ -343,4 +421,6 @@ def test_function_name_scenario():
 3. **Explicit Over Implicit**: Be explicit about types, errors, and behavior
 4. **Edge Cases First**: Identify and handle edge cases explicitly
 5. **Fail Fast**: Validate inputs early and provide clear error messages
-6. **Example-Driven Development**: Include examples in documentation that act as tests 
+6. **Example-Driven Development**: Include examples in documentation that act as tests
+7. **Modular Design**: Keep components small and focused on a single responsibility
+8. **Type-Driven Development**: Use types to guide implementation 
