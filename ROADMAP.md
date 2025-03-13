@@ -56,14 +56,14 @@ This project is designed to be implemented by an AI agent, which requires specia
   - [x] `ecs/system.py`: System implementation for processing entities
   - [x] `ecs/world.py`: World container for entities, systems, and their relationships
   - [x] **Tests for all ECS components with at least 90% coverage**
-  - [ ] **Documentation of ECS architecture decisions**
+  - [x] **Documentation of ECS architecture decisions**
 
 - [x] Refactored Environment with separated responsibilities:
   - [x] `environment/grid.py`: Spatial grid with entity position tracking
   - [x] `environment/boundary.py`: Boundary condition handlers
   - [x] `environment/resources.py`: Resource management
   - [x] **Tests for all environment components**
-  - [ ] **Examples of environment interactions**
+  - [x] **Examples of environment interactions**
 
 - [x] Event System implementation:
   - [x] `events/dispatcher.py`: Generic event dispatcher
@@ -74,7 +74,7 @@ This project is designed to be implemented by an AI agent, which requires specia
 - [x] Domain-specific type definitions:
   - [x] `types/core.py`: Core type definitions and protocols
   - [x] **Tests verifying type usage**
-  - [ ] **Documentation of type system**
+  - [x] **Documentation of type system**
 
 **Testing Requirements**:
 - **Unit Tests**: Every function and method has corresponding tests
