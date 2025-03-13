@@ -49,34 +49,53 @@ def run_simulation(
     steps: Optional[int] = typer.Option(
         None,
         "--steps", "-s", 
-        help="Number of steps to run (default: unlimited)",
+        help="Number of steps to run. Use None for unlimited simulation.",
         min=1,
     ),
     visualizer: str = typer.Option(
-        "console",
+        "matplotlib",
         "--visualizer", "-v", 
-        help="Visualization method to use",
+        help="Visualization method to use. Possible values: [matplotlib, console, none]",
         case_sensitive=False,
     ),
     no_visualization: bool = typer.Option(
         False,
         "--no-vis",
-        help="Disable visualization",
+        help="Disable visualization (equivalent to --visualizer none)",
         is_flag=True,
     ),
     step_delay: Optional[float] = typer.Option(
         None,
         "--delay", "-d",
-        help="Delay between steps in seconds",
+        help="Delay between steps in seconds. Default: 0.5",
         min=0.0,
     ),
     random_seed: Optional[int] = typer.Option(
         None,
         "--seed",
-        help="Random seed for reproducible results",
+        help="Random seed for reproducible results. Use None for random initialization.",
     ),
 ):
-    """Run a simulation with the specified configuration."""
+    """Run a simulation with the specified configuration.
+    
+    The simulation can be configured using various options:
+    
+    Visualization:
+    - Use --visualizer to choose the visualization method:
+      * matplotlib: Graphical display with plots (default)
+      * console: Simple ASCII visualization in terminal
+      * none: No visualization
+    
+    Simulation Control:
+    - Use --steps to limit the number of steps (default: unlimited)
+    - Use --delay to control simulation speed (default: 0.5s)
+    - Use --seed for reproducible results
+    - Use --no-vis to disable visualization
+    
+    Configuration:
+    - Use --config to specify a custom configuration file
+    - Without --config, uses the default configuration
+    """
     try:
         # Load configuration
         config = load_or_default(config_path)
