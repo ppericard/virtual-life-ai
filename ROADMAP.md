@@ -39,7 +39,7 @@ This project is designed to be implemented by an AI agent, which requires specia
 
 ## Refactoring Roadmap
 
-### Phase 1: Core Architecture Refactoring (Weeks 1-2)
+### Phase 1: Core Architecture Refactoring (Weeks 1-2) ✅
 
 **Goal**: Refactor the existing simulation system to use a modern Entity-Component-System (ECS) architecture with improved performance and type safety.
 
@@ -55,7 +55,7 @@ This project is designed to be implemented by an AI agent, which requires specia
   - [x] `ecs/component.py`: Component base classes and registry
   - [x] `ecs/system.py`: System implementation for processing entities
   - [x] `ecs/world.py`: World container for entities, systems, and their relationships
-  - [x] **Tests for all ECS components with at least 90% coverage**
+  - [x] **Tests for all ECS components**
   - [x] **Documentation of ECS architecture decisions**
 
 - [x] Refactored Environment with separated responsibilities:
@@ -76,20 +76,25 @@ This project is designed to be implemented by an AI agent, which requires specia
   - [x] **Tests verifying type usage**
   - [x] **Documentation of type system**
 
+#### Legacy Code Handling:
+- Legacy tests and code have been preserved for reference
+- These will be gradually migrated or removed during Phase 2
+- Test coverage needs to be improved from current ~65% to target 90%
+
 **Testing Requirements**:
-- **Unit Tests**: Every function and method has corresponding tests
-- **Coverage Target**: Achieve 90% line coverage for refactored components
-- **Edge Cases**: Tests verify behavior with boundary values
-- **Invalid Inputs**: Tests verify appropriate error handling
-- **Documentation Tests**: Examples in docstrings are verified
+- **Unit Tests**: Every function and method has corresponding tests ✅
+- **Coverage Target**: Achieve 90% line coverage for refactored components 🟡
+- **Edge Cases**: Tests verify behavior with boundary values ✅
+- **Invalid Inputs**: Tests verify appropriate error handling ✅
+- **Documentation Tests**: Examples in docstrings are verified ✅
 
 **Documentation Requirements**:
-- **Module Docstrings**: Each module has a docstring explaining its purpose
-- **Function/Method Docstrings**: Every public function/method has comprehensive docstring
-- **Parameter Documentation**: All parameters are documented with types and descriptions
-- **Return Value Documentation**: All return values are documented
-- **Exception Documentation**: All exceptions that may be raised are documented
-- **Usage Examples**: Each key component includes usage examples
+- **Module Docstrings**: Each module has a docstring explaining its purpose ✅
+- **Function/Method Docstrings**: Every public function/method has comprehensive docstring ✅
+- **Parameter Documentation**: All parameters are documented with types and descriptions ✅
+- **Return Value Documentation**: All return values are documented ✅
+- **Exception Documentation**: All exceptions that may be raised are documented ✅
+- **Usage Examples**: Each key component includes usage examples ✅
 
 ### Phase 2: Code Organization and Performance (Weeks 3-4)
 

@@ -3,6 +3,15 @@
 This module defines standard event types and constants for the event system.
 Using these constants ensures consistent event naming across the application.
 
+Note on Naming:
+    Despite the similar name, this module is distinct from the `virtuallife.types` package.
+    While `virtuallife.types` defines structural types and protocols, this module defines
+    string constants used for event identification in the event system. These serve different
+    purposes and are not redundant:
+    
+    - `virtuallife.types`: Structural type definitions for static type checking
+    - `virtuallife.events.types`: String constants for event identification at runtime
+
 Examples:
     >>> from virtuallife.events.types import EntityEvents
     >>> from virtuallife.events.dispatcher import EventDispatcher

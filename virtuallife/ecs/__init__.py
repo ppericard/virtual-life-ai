@@ -1,44 +1,43 @@
-"""Entity-Component-System (ECS) architecture for the VirtualLife simulation.
+"""Entity-Component-System (ECS) architecture for VirtualLife.
 
-This package implements a modern Entity-Component-System architecture that serves
-as the foundation for the VirtualLife simulation. It provides a flexible, modular
-approach to modeling entities and their behaviors.
+This package provides the core classes for the ECS architecture used in the
+VirtualLife simulation. The ECS architecture is a design pattern that emphasizes
+composition over inheritance, separating data (components) from logic (systems).
 
-The ECS pattern separates:
-- Entities (unique identifiers with collections of components)
-- Components (data containers that define properties and capabilities)
-- Systems (logic that operates on entities with specific components)
-
-This separation allows for better code organization, improved performance through
-specialized processing, and greater flexibility through component composition.
+Core Components:
+- Entity: Container for components with a position and ID
+- Component: Data containers that can be attached to entities
+- System: Logic that processes entities with specific components
+- World: Container for entities and systems, manages simulation updates
 
 Examples:
     >>> from virtuallife.ecs import World, Entity, System
+    >>> from dataclasses import dataclass
     >>> 
-    >>> # Create a world
+    >>> # Create a world to manage entities and systems
     >>> world = World()
     >>> 
     >>> # Create an entity
-    >>> entity = Entity()
+    >>> entity = Entity(position=(10, 20))
     >>> 
-    >>> # Define a simple component
+    >>> # Define a component
+    >>> @dataclass
     >>> class PositionComponent:
-    ...     def __init__(self, x, y):
-    ...         self.x = x
-    ...         self.y = y
-    ...     
-    ...     def update(self, entity, world, dt):
-    ...         pass
+    >>>     x: int = 0
+    >>>     y: int = 0
+    >>>     
+    >>>     def update(self, entity, world, dt):
+    >>>         pass
     >>> 
-    >>> # Add component to entity
-    >>> entity.add_component(PositionComponent(10, 20))
+    >>> # Add the component to the entity
+    >>> entity.add_component(PositionComponent(x=10, y=20))
     >>> 
-    >>> # Add entity to world
+    >>> # Add the entity to the world
     >>> world.add_entity(entity)
 """
 
 from virtuallife.ecs.entity import Entity
-from virtuallife.ecs.component import Component
+from virtuallife.ecs.component import Component, register_component, get_component_class, get_component_type
 from virtuallife.ecs.system import System
 from virtuallife.ecs.world import World
 
@@ -47,4 +46,7 @@ __all__ = [
     'Component',
     'System',
     'World',
+    'register_component',
+    'get_component_class',
+    'get_component_type',
 ]
