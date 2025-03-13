@@ -30,8 +30,8 @@ class MatplotlibVisualizer(Visualizer):
             entity_colors: Optional dictionary mapping entity types to colors.
                          Defaults to basic colors if not provided.
         """
+        # Only include colors for actual entity types (no default)
         self.entity_colors = entity_colors or {
-            "default": "gray",
             "plant": "green",
             "herbivore": "blue",
             "predator": "red"
@@ -49,7 +49,25 @@ class MatplotlibVisualizer(Visualizer):
         """
         # Create figure and axis
         plt.ion()  # Enable interactive mode
-        self.fig, self.ax = plt.subplots(figsize=(8, 8))
+        
+        # Calculate figure size based on grid dimensions
+        grid_ratio = runner.environment.width / runner.environment.height
+        base_height = 8  # Base figure height
+        
+        # Add extra width for the legend (20% of the plot width for wide grids, 25% for others)
+        plot_width = base_height * grid_ratio
+        legend_width = plot_width * (0.20 if grid_ratio > 2 else 0.25)
+        total_width = plot_width + legend_width
+        
+        # Create figure with adaptive size
+        self.fig = plt.figure(figsize=(total_width, base_height))
+        
+        # Create main plot area with proper margins for legend
+        # Left margin: 8%, Right margin: legend width + 2%, Top/Bottom: 10%
+        left_margin = 0.08
+        right_margin = legend_width / total_width + 0.02
+        self.ax = self.fig.add_axes([left_margin, 0.1, 1 - (left_margin + right_margin), 0.8], aspect='equal')
+        
         self.ax.set_xlim(-0.5, runner.environment.width - 0.5)
         self.ax.set_ylim(-0.5, runner.environment.height - 0.5)
         self.ax.grid(True)
@@ -67,7 +85,9 @@ class MatplotlibVisualizer(Visualizer):
                 extent=(-0.5, runner.environment.width - 0.5, -0.5, runner.environment.height - 0.5)
             )
         
-        self.ax.legend()
+        # Place legend completely outside the plot with adaptive positioning
+        bbox_x = 1.02 if grid_ratio <= 2 else 1.01  # Closer to plot for wide grids
+        self.ax.legend(bbox_to_anchor=(bbox_x, 1), loc='upper left')
         plt.title("VirtualLife Simulation")
         
         # Attach to simulation events
@@ -95,12 +115,13 @@ class MatplotlibVisualizer(Visualizer):
             if entity_ids:
                 x, y = pos
                 entity = env.entities[next(iter(entity_ids))]
-                entity_type = "default"
+                entity_type = None
                 for component_type in ["plant", "herbivore", "predator"]:
                     if entity.has_component(component_type):
                         entity_type = component_type
                         break
-                positions[entity_type].append((x, y))
+                if entity_type in self.entity_colors:
+                    positions[entity_type].append((x, y))
         
         # Update scatter plots
         for entity_type, pos_list in positions.items():

@@ -1,0 +1,45 @@
+# Configuration for VirtualLife simulation with a small rectangular grid
+
+environment:
+  width: 10
+  height: 20
+  boundary_condition: wrapped
+  initial_entities: 15
+
+energy:
+  initial_energy: 100.0
+  max_energy: 100.0
+  decay_rate: 0.1
+  death_threshold: 0.0
+
+movement:
+  speed: 1.0
+  movement_cost: 0.1
+
+reproduction:
+  reproduction_threshold: 80.0
+  reproduction_cost: 50.0
+  reproduction_chance: 0.1
+  offspring_energy: 50.0
+  mutation_rate: 0.1
+  inherit_components:
+    energy: true
+    movement: true
+    consumer: true
+    reproduction: true
+
+consumer:
+  resource_type: food
+  consumption_rate: 1.0
+  energy_conversion: 0.5
+
+resources:
+  resource_types:
+    food: 1.0
+  initial_density: 0.2
+  regrowth_rate: 0.05
+  max_resource: 10.0
+
+random_seed: null
+max_steps: null
+step_delay: 0.5 
